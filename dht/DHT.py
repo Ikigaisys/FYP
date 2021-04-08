@@ -1,13 +1,13 @@
 import sys
 import logging
 import asyncio
-from filestorage import FileStorage
+from .filestorage import FileStorage
 from kademlia.network import Server
 
 class DHT:
     def __init__(self, storage_file, port):
-        if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        #if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
+        #    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
         # Logging
         self.handler = logging.StreamHandler()
@@ -27,7 +27,9 @@ class DHT:
     def run(self):
         try:
             self.loop.run_forever()
+            print("F")
         except KeyboardInterrupt:
+            print(self.node.protocol.router.buckets[0].get_nodes())
             pass
         finally:
             self.node.stop()
