@@ -11,18 +11,14 @@ class Domain:
         self.value = ''
 
 
-# class Transaction:
+class Transaction:
 
-#    def __init__(self, amount, fee, txid = None, time = None):
-#        self.amount = amount
-#        self.fee = fee
-#        if txid == None:
-#            self.txid = datetime.now() / 1000
-#        if time == None:
-#            self.time = datetime.now() / 1000
-#        self.details = {
-#           account, address, category, amount, fee
-#        }
+   def __init__(self, amount, fee, category, sender, receiver, last_proof, time = None):
+       self.amount = amount
+       self.fee = fee
+       if time == None:
+           self.time = datetime.now() / 1000
+       self.details = { category, sender, receiver }
 
 
 class Block:
