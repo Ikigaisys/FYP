@@ -1,11 +1,11 @@
 import logging
 import asyncio
 import sys
-from filestorage import FileStorage
+
 from kademlia.network import Server
 
-if len(sys.argv) != 5:
-    print("Usage: python set.py <bootstrap node> <bootstrap port> <key> <value>")
+if len(sys.argv) != 4:
+    print("Usage: python get.py <bootstrap node> <bootstrap port> <key>")
     sys.exit(1)
 
 handler = logging.StreamHandler()
@@ -16,11 +16,13 @@ log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
 async def run():
-    server = Server(storage=FileStorage("kademlia.csv"))
-    await server.listen(5678)
+    server = Server()
+    await server.listen(8469)
     bootstrap_node = (sys.argv[1], int(sys.argv[2]))
     await server.bootstrap([bootstrap_node])
-    await server.set(sys.argv[3], sys.argv[4])
+
+    result = await server.get(sys.argv[3])
+    print("Get result:", result)
     server.stop()
 
 asyncio.run(run())
