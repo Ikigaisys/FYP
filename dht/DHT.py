@@ -1,4 +1,5 @@
 import sys
+import threading
 import logging
 import asyncio
 from .filestorage import FileStorage
@@ -6,9 +7,6 @@ from kademlia.network import Server
 
 class DHT:
     def __init__(self, storage_file, port):
-        #if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
-        #    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
         # Logging
         self.handler = logging.StreamHandler()
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -16,6 +14,7 @@ class DHT:
         self.log = logging.getLogger('kademlia')
         self.log.addHandler(self.handler)
         self.log.setLevel(logging.DEBUG)
+        self.port = port
 
         # Set loop
         self.loop = asyncio.get_event_loop()
@@ -24,13 +23,29 @@ class DHT:
         self.node = Server(storage=FileStorage(storage_file))
         self.loop.run_until_complete(self.node.listen(port))
 
-    def run(self):
+    def server(self):
         try:
             self.loop.run_forever()
-            print("F")
         except KeyboardInterrupt:
             print(self.node.protocol.router.buckets[0].get_nodes())
             pass
         finally:
             self.node.stop()
             self.loop.close()
+
+    def set_server(self):
+        while True:
+            data = input()
+            split_data = data.split(',')
+            if len(split_data) == 2:
+                asyncio.run(self.node.set(split_data[0], split_data[1]))
+
+    def run(self):
+        server_thread = threading.Thread(target=self.server)
+        set_thread = threading.Thread(target=self.set_server)
+
+        server_thread.start()
+        set_thread.start()
+
+        server_thread.join()
+        set_thread.join()
