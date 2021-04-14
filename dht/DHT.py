@@ -3,6 +3,7 @@ import threading
 import logging
 import asyncio
 import os
+import json
 from .filestorage import FileStorage
 from kademlia.network import Server
 from blockchain.blockchain import Blockchain, Block
@@ -39,22 +40,35 @@ class DHT:
             self.node.stop()
             self.loop.close()
 
-    def set_server(self):
-        chain = Blockchain(self, Block(0, None))
+    def reader(self):
+        # chain = Blockchain(self, Block(0, None))
         # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
 
         while True:
-            chain.create_block()
+            # block = chain.create_block()
 
             data = input()
             split_data = data.split(',')
             if len(split_data) == 2:
                 asyncio.run_coroutine_threadsafe(self.node.bootstrap([('172.25.48.135', 5678)]), self.loop)
                 asyncio.run_coroutine_threadsafe(self.node.set(split_data[0], split_data[1]), self.loop)
+            elif data == 'send':
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap([('172.25.48.135', 5678)]), self.loop)
+    
+                block = Block(0, None)
+                key = block.id
+                value = {
+                    'type': 'block',
+                    'data': block.serialize()
+                }
+                print(value)
+                value_encoded = json.dumps(value)
+
+                asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
 
     def run(self):
         server_thread = threading.Thread(target=self.server)
-        set_thread = threading.Thread(target=self.set_server)
+        set_thread = threading.Thread(target=self.reader)
 
         server_thread.start()
         set_thread.start()

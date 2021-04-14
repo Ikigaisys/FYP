@@ -111,8 +111,11 @@ class Block:
     def find_transaction(self, key):
         pass
 
+    def serialize(self):
+        return json.dumps(self.__dict__, sort_keys=True)
+
     def hash(self):
-        encoded_block = json.dumps(self.__dict__, sort_keys=True).encode()
+        encoded_block = self.serialize().encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
     def proof_of_work(self):
@@ -152,7 +155,7 @@ class Blockchain:
         self.last_block = last_block
 
     def find_block_network(self, id):
-        1
+        pass
 
     def accept_block(self, block):
         txs = block.get_transactions()
@@ -171,22 +174,23 @@ class Blockchain:
                 lines = file.readlines()
                 block = Block(self.last_block.id + 1, self.last_block.prev_hash, key_string[1])
                 for line in lines:
-                    d = line.split(',')
+                    amount, fee, category, sender, receiver, private_key = line.split(',')
                     if len(d) < 5:
                         continue
-                    tx = Transaction(d[0], d[1], d[2], d[3], d[4])
-                    tx.sign(d[5])
+                    tx = Transaction( amount, fee, category, sender, receiver)
+                    tx.sign(private_key)
                     if tx.validate() and tx.verify():
                         block.add_transaction(tx)
-                        accounts[d[3]] -= d[0] + d[1]
-                        accounts[d[4]] += d[0]
-                        accounts[key_string[1]] += d[1]
+                        accounts[sender] -= amount + fee
+                        accounts[receiver] += amount
+                        accounts[key_string[1]] += fee # key_string[1] = pubic key of miner
                         block.add_transaction(tx)
                 accounts[key_string[1]] += 20
 
             block.nonce = block.proof_of_work()
             # TODO: SEND THIS BLOCK TO OTHERS
             open('transactions.txt', 'w').close()
+            return block
 
 
 """if __name__ == '__main__':
