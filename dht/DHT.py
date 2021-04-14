@@ -6,6 +6,7 @@ from .filestorage import FileStorage
 from kademlia.network import Server
 
 class DHT:
+
     def __init__(self, storage_file, port):
         # Logging
         self.handler = logging.StreamHandler()
@@ -21,14 +22,18 @@ class DHT:
         self.loop.set_debug(True)
 
         self.node = Server(storage=FileStorage(storage_file))
-        self.loop.run_until_complete(self.node.listen(port))
+        # asyncio.run(self.bootstrapper())
+        self.loop.create_task(self.node.listen(port))
+
+    async def bootstrapper(self):
+        await self.node.listen(self.port)
+        await self.node.bootstrap([('172.25.48.135', 5678)])
 
     def server(self):
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
             print(self.node.protocol.router.buckets[0].get_nodes())
-            pass
         finally:
             self.node.stop()
             self.loop.close()
@@ -38,7 +43,8 @@ class DHT:
             data = input()
             split_data = data.split(',')
             if len(split_data) == 2:
-                asyncio.run(self.node.set(split_data[0], split_data[1]))
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap([('172.25.48.135', 5678)]), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.set(split_data[0], split_data[1]), self.loop)
 
     def run(self):
         server_thread = threading.Thread(target=self.server)

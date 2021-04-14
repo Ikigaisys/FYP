@@ -4,7 +4,7 @@ import sys
 
 from kademlia.network import Server
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 5:
     print("Usage: python get.py <bootstrap node> <bootstrap port> <key>")
     sys.exit(1)
 
@@ -21,7 +21,7 @@ async def run():
     bootstrap_node = (sys.argv[1], int(sys.argv[2]))
     await server.bootstrap([bootstrap_node])
 
-    result = await server.get(sys.argv[3])
+    result = await server.set(sys.argv[3], sys.argv[4])
     print("Get result:", result)
     server.stop()
 
