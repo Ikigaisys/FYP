@@ -38,7 +38,7 @@ class KademliaProtocol(RPCProtocol):
         return self.source_node.id
 
     def rpc_store(self, sender, nodeid, key, value):
-        print(sender, nodeid, key, value)
+        self.callback(sender, nodeid, key, value)
         source = Node(nodeid, sender[0], sender[1])
         self.welcome_if_new(source)
         log.debug("got a store request from %s, storing '%s'='%s'",

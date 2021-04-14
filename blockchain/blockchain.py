@@ -4,7 +4,7 @@ import os
 from flask import Flask, jsonify
 from datetime import datetime
 from json import JSONEncoder
-from encryption import Signatures
+from .encryption import Signatures
 
 class Key:
 
@@ -38,15 +38,18 @@ class Accounts:
             lines = file.readlines()
             for line in lines:
                 d = line.split(',')
-                self[d[0]] = d[1]
+                d[0] = d[0].replace("$", "\n")
+                self.dict[d[0]] = d[1]
 
     def __getitem__(self, key):
+        print(self.dict)
         return self.dict[key]
 
     def __setitem__(self, key, value):
         self.dict[key] = value
         with open('accounts.txt', 'w') as file:
             for key in self.dict:
+                key = key.replace("\n", "$")
                 file.write(key + ',' + value)
 
 accounts = Accounts()
@@ -65,11 +68,11 @@ class Transaction:
         self.fee = fee
         if time == None:
             self.time = datetime.now() / 1000
-        self.details = { category, sender, receiver }
+        self.details = { 'category': category, 'sender': sender, 'receiver': receiver }
         self.signature = None
 
     def validate(self):
-        if accounts[self.sender] - self.fee - self.amount > 0:
+        if accounts[self.details['sender']] - self.fee - self.amount > 0:
             return True
         return False
 
@@ -79,7 +82,7 @@ class Transaction:
 
     def verify(self):
         sig = Signatures()
-        public_key = sig.string_to_key(None, self.sender)
+        public_key = sig.string_to_key(None, self.details['sender'])
         temp = self.signature
         self.signature = None
         temp2 = sig.verify(public_key, json.dumps(self.__dict__, sort_keys=True), temp)
@@ -170,6 +173,8 @@ class Blockchain:
                 block = Block(self.last_block.id + 1, self.last_block.prev_hash, key_string[1])
                 for line in lines:
                     d = line.split(',')
+                    if len(d) < 5:
+                        continue
                     tx = Transaction(d[0], d[1], d[2], d[3], d[4])
                     tx.sign(d[5])
                     if tx.validate() and tx.verify():
@@ -177,6 +182,7 @@ class Blockchain:
                         accounts[d[3]] -= d[0] + d[1]
                         accounts[d[4]] += d[0]
                         accounts[key_string[1]] += d[1]
+                        block.add_transaction(tx)
                 accounts[key_string[1]] += 20
 
             block.nonce = block.proof_of_work()

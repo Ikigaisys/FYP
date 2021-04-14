@@ -5,7 +5,7 @@ import asyncio
 import os
 from .filestorage import FileStorage
 from kademlia.network import Server
-from ..blockchain import blockchain
+from blockchain.blockchain import Blockchain, Block
 
 class DHT:
 
@@ -25,14 +25,10 @@ class DHT:
 
         self.node = Server(storage=FileStorage(storage_file))
         # asyncio.run(self.bootstrapper())
-        self.loop.create_task(self.node.listen(port, self.printer))
+        self.loop.create_task(self.node.listen(port, self.storage))
 
-    def printer(p):
-        print(p)
-
-    async def bootstrapper(self):
-        await self.node.listen(self.port)
-        await self.node.bootstrap([('172.25.48.135', 5678)])
+    def storage(self, sender, nodeid, key, value):
+        pass
 
     def server(self):
         try:
@@ -44,7 +40,7 @@ class DHT:
             self.loop.close()
 
     def set_server(self):
-        chain = Blockchain(self)
+        chain = Blockchain(self, Block(0, None))
         # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
 
         while True:
