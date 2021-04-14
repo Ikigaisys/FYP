@@ -47,7 +47,7 @@ class Accounts:
         self.dict[key] = value
         with open('accounts.txt', 'w') as file:
             for key in self.dict:
-                file.write(d[0] + ',' + d[1])
+                file.write(key + ',' + value)
 
 accounts = Accounts()
 
@@ -79,7 +79,7 @@ class Transaction:
 
     def verify(self):
         sig = Signatures()
-        public_key = sig.string_to_key(None, sender)
+        public_key = sig.string_to_key(None, self.sender)
         temp = self.signature
         self.signature = None
         temp2 = sig.verify(public_key, json.dumps(self.__dict__, sort_keys=True), temp)
