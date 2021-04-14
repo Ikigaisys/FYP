@@ -91,7 +91,7 @@ class Transaction:
 
 class Block:
 
-    def __init__(self, id, prev_hash, miner=None, timestamp=None, nonce=None):
+    def __init__(self, id, prev_hash, miner=None, timestamp=None, nonce=None, data=[]):
         self.id = id
         if timestamp is None:
             self.timestamp = datetime.timestamp(datetime.now()) / 1000  # in unix seconds
@@ -100,7 +100,7 @@ class Block:
         self.prev_hash = prev_hash
         self.nonce = nonce
         self.miner = miner
-        self.data = []
+        self.data = data
 
     def add_transaction(self, tx):
         self.data.append(tx)

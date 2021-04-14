@@ -20,6 +20,9 @@ class DHT:
         self.log.setLevel(logging.DEBUG)
         self.port = port
 
+        # Blockchain 
+        self.chain = Blockchain(self, Block(0, None))
+
         # Set loop
         self.loop = asyncio.get_event_loop()
         self.loop.set_debug(True)
@@ -29,7 +32,12 @@ class DHT:
         self.loop.create_task(self.node.listen(port, self.storage))
 
     def storage(self, sender, nodeid, key, value):
-        pass
+        data = json.loads(value)
+
+        if data['type'] == 'block':
+            block = json.loads(data['data'], object_hook=lambda args: Block(**args))
+            chain.accept_block(block))
+
 
     def server(self):
         try:
@@ -41,7 +49,6 @@ class DHT:
             self.loop.close()
 
     def reader(self):
-        # chain = Blockchain(self, Block(0, None))
         # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
 
         while True:
@@ -61,7 +68,6 @@ class DHT:
                     'type': 'block',
                     'data': block.serialize()
                 }
-                print(value)
                 value_encoded = json.dumps(value)
 
                 asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
