@@ -37,20 +37,19 @@ class Accounts:
         with open('accounts.txt', 'r') as file:
             lines = file.readlines()
             for line in lines:
-                d = line.split(',')
-                d[0] = d[0].replace("$", "\n")
-                self.dict[d[0]] = d[1]
+                key, value = line.split(',')
+                key = key.replace("$", "\n").encode()
+                self.dict[key] = int(value)
 
     def __getitem__(self, key):
-        print(self.dict)
         return self.dict[key]
 
     def __setitem__(self, key, value):
         self.dict[key] = value
         with open('accounts.txt', 'w') as file:
             for key in self.dict:
-                key = key.replace("\n", "$")
-                file.write(key + ',' + value)
+                key = key.decode('utf-8').replace("\n", "$")
+                file.write(key + ',' + str(value))
 
 accounts = Accounts()
 
@@ -110,7 +109,7 @@ class Block:
         return self.data
 
     def find_transaction(self, key):
-        1
+        pass
 
     def hash(self):
         encoded_block = json.dumps(self.__dict__, sort_keys=True).encode()
