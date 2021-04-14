@@ -25,7 +25,10 @@ class DHT:
 
         self.node = Server(storage=FileStorage(storage_file))
         # asyncio.run(self.bootstrapper())
-        self.loop.create_task(self.node.listen(port))
+        self.loop.create_task(self.node.listen(port, self.printer))
+
+    def printer(p):
+        print(p)
 
     async def bootstrapper(self):
         await self.node.listen(self.port)

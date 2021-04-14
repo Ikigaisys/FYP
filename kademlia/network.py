@@ -44,6 +44,7 @@ class Server:
         self.protocol = None
         self.refresh_loop = None
         self.save_state_loop = None
+        self.callback = None
 
     def stop(self):
         if self.transport is not None:
@@ -56,14 +57,15 @@ class Server:
             self.save_state_loop.cancel()
 
     def _create_protocol(self):
-        return self.protocol_class(self.node, self.storage, self.ksize)
+        return self.protocol_class(self.node, self.storage, self.ksize, self.callback)
 
-    async def listen(self, port, interface='0.0.0.0'):
+    async def listen(self, port, callback, interface='0.0.0.0'):
         """
         Start listening on the given port.
 
         Provide interface="::" to accept ipv6 address
         """
+        self.callback = callback
         loop = asyncio.get_event_loop()
         listen = loop.create_datagram_endpoint(self._create_protocol,
                                                local_addr=(interface, port))
