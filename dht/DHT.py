@@ -2,8 +2,10 @@ import sys
 import threading
 import logging
 import asyncio
+import os
 from .filestorage import FileStorage
 from kademlia.network import Server
+from ..blockchain import blockchain
 
 class DHT:
 
@@ -39,7 +41,12 @@ class DHT:
             self.loop.close()
 
     def set_server(self):
+        chain = Blockchain(self)
+        # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
+
         while True:
+            chain.create_block()
+
             data = input()
             split_data = data.split(',')
             if len(split_data) == 2:
