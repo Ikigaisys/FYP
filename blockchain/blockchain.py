@@ -88,7 +88,6 @@ class Transaction:
         self.signature = temp
         return temp2
 
-
 class Block:
 
     def __init__(self, id, prev_hash, miner=None, timestamp=None, nonce=None, data=[]):
@@ -114,10 +113,6 @@ class Block:
     def serialize(self):
         return json.dumps(self.__dict__, sort_keys=True)
 
-    def hash(self):
-        encoded_block = self.serialize().encode()
-        return hashlib.sha256(encoded_block).hexdigest()
-
     def proof_of_work(self):
         #previous_proof = last_block.proof
         #last_hash = last_block.hash()
@@ -137,14 +132,12 @@ class Block:
         return temp
 
     def validate_proof(self, block):
-        guess = f'{block.__dict__}'.encode()
-        guess_hash = hashlib.sha256(guess).hexdigest()
-        return guess_hash[:4] == "0000"
+        block_hash = self.hash()
+        return block_hash[:4] == "0000"
 
-    def hash_proof(self):
-        guess = f'{self.__dict__}'.encode()
-        guess_hash = hashlib.sha256(guess).hexdigest()
-        return guess_hash
+    def hash(self):
+        encoded_block = f'{self.__dict__}'.encode()
+        return hashlib.sha256(encoded_block).hexdigest()
 
 class Blockchain:
 
@@ -153,20 +146,66 @@ class Blockchain:
         self.dht = dht
         self.is_miner = is_miner
         self.last_block = last_block
+        if os.stat('blockchain.txt').st_size == 0:
+            with open('blockchain.txt', 'r') as file:
+                lines = file.readlines()
+                i = 0
+                for line in lines:
+                    if i == 0:
+                        self.is_miner = int(line)
+                    elif i == 1:
+                        self.last_block = json.loads(line, object_hook=Block)
+                    else:
+                        self.chain.append(json.loads(line, object_hook=Block))
 
     def find_block_network(self, id):
         pass
 
-    def accept_block(self, block):
+    def tx_perform(self, block):
         txs = block.get_transactions()
         for tx in txs:
             if not tx.validate() or not tx.verify():
-                return
+                return False
             accounts[tx.sender] -= tx.amount + tx.fee
             accounts[tx.receiver] += tx.amount
             accounts[block.miner] += tx.fee
         accounts[block.miner] += 20
+        return True 
+
+    def set_last_block(self, block):
+
+        while self.last_block.id + 1 < block.id:
+            # TODO: Update my last_block by asking the network
+            # for the missing blocks
+            pass
+
+        if self.last_block.id + 1 == block.id and block.validate_proof() and self.tx_perform(block):
+            self.last_block = block
+            return True
+
+        if self.last_block.id == block.id and self.last_block.hash() == block.hash():
+            return True
+
+        return False
+
+    def chain_append(self, block):
         self.chain.append(block)
+        with open('blockchain.txt', 'w') as file:
+            file.write(str(self.is_miner) + '\n')
+            file.write(json.dumps(self.last_block.__dict__, sort_keys = True) + '\n')
+            for block in self.chain:
+                file.write(json.dumps(block.__dict__, sort_keys = True) + '\n')
+
+    def accept_block(self, block):
+        # Handle newer blocks
+        if self.set_last_block(block):
+            self.chain_append(block)
+            return True
+        # Handle older blocks (Don't do transactions again)
+        if self.last_block.id > block.id:
+            self.chain_append(block)
+            return True
+        return False
 
     def create_block(self):
         if self.is_miner and os.stat('transactions.txt').st_size == 0:
@@ -174,21 +213,19 @@ class Blockchain:
                 lines = file.readlines()
                 block = Block(self.last_block.id + 1, self.last_block.prev_hash, key_string[1])
                 for line in lines:
-                    amount, fee, category, sender, receiver, private_key = line.split(',')
-                    if len(d) < 5:
+                    if len(line.split(',')) < 5:
                         continue
-                    tx = Transaction( amount, fee, category, sender, receiver)
+                    amount, fee, category, sender, receiver, private_key = line.split(',')
+                    tx = Transaction(amount, fee, category, sender, receiver)
                     tx.sign(private_key)
                     if tx.validate() and tx.verify():
                         block.add_transaction(tx)
-                        accounts[sender] -= amount + fee
-                        accounts[receiver] += amount
-                        accounts[key_string[1]] += fee # key_string[1] = pubic key of miner
-                        block.add_transaction(tx)
-                accounts[key_string[1]] += 20
 
             block.nonce = block.proof_of_work()
+            # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
+            # UPDATE ID AND REPEAT PROCEDURE
             # TODO: SEND THIS BLOCK TO OTHERS
+            self.tx_perform(block)
             open('transactions.txt', 'w').close()
             return block
 

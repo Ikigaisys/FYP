@@ -1,11 +1,13 @@
 from kademlia.storage import IStorage
+from os import path
 import csv
 import time
 
 class FileStorage(IStorage):
     def __init__(self, file="kademlia.csv"):
-        f = open(file, "w")
-        f.close()
+        if not path.exists(file):
+            f = open(file, "w")
+            f.close()
         self.file = file
 
     def cull(self):
@@ -17,7 +19,7 @@ class FileStorage(IStorage):
                 spamwriter.writerow([key, value, time.monotonic()])
 
     def get(self, key, default=None):
-        with open(self.file, newline='') as csvfile:
+        with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
                         if row[0] == str(key):
@@ -25,7 +27,7 @@ class FileStorage(IStorage):
         return default
 
     def __getitem__(self, key):
-        with open(self.file, newline='') as csvfile:
+        with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
                         if row[0] == str(key):
@@ -35,7 +37,7 @@ class FileStorage(IStorage):
         min_birthday = time.monotonic() - seconds_old
         ikeys = list()
         ivalues = list()
-        with open(self.file, newline='') as csvfile:
+        with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
                         if min_birthday >= row[2]:
@@ -47,7 +49,7 @@ class FileStorage(IStorage):
         self.cull()
         ikeys = list()
         ivalues = list()
-        with open(self.file, newline='') as csvfile:
+        with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
                         ikeys.append(row[0])

@@ -36,7 +36,11 @@ class DHT:
 
         if data['type'] == 'block':
             block = json.loads(data['data'], object_hook=lambda args: Block(**args))
-            chain.accept_block(block))
+            if self.chain.accept_block(block):
+                return True
+            return False
+
+        return True
 
 
     def server(self):
@@ -53,12 +57,15 @@ class DHT:
 
         while True:
             # block = chain.create_block()
+            asyncio.run_coroutine_threadsafe(self.node.bootstrap([('localhost', 5678)]), self.loop)
 
             data = input()
             split_data = data.split(',')
+
             if len(split_data) == 2:
                 asyncio.run_coroutine_threadsafe(self.node.bootstrap([('172.25.48.135', 5678)]), self.loop)
                 asyncio.run_coroutine_threadsafe(self.node.set(split_data[0], split_data[1]), self.loop)
+
             elif data == 'send':
                 asyncio.run_coroutine_threadsafe(self.node.bootstrap([('172.25.48.135', 5678)]), self.loop)
     
@@ -71,6 +78,13 @@ class DHT:
                 value_encoded = json.dumps(value)
 
                 asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
+
+            elif data == 'get':
+                block = Block(0, None)
+                key = block.id
+                future = asyncio.run_coroutine_threadsafe(self.node.get(key), self.loop)
+                result = future.result(3)
+                print(result)
 
     def run(self):
         server_thread = threading.Thread(target=self.server)
