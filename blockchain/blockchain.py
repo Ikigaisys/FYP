@@ -21,7 +21,8 @@ class Key:
 
     def to_string(self):
         sig = Signatures()
-        return sig.key_to_string(self.private_key, self.public_key)
+        pvt, pb = sig.key_to_string(self.private_key, self.public_key)
+        return pvt.decode('utf-8'), pb.decode('utf-8')
 
 f1 = open('pvk.txt','r')
 f2 = open('pbk.txt','r')
@@ -38,7 +39,7 @@ class Accounts:
             lines = file.readlines()
             for line in lines:
                 key, value = line.split(',')
-                key = key.replace("$", "\n").encode()
+                key = key.replace("$", "\n")
                 self.dict[key] = int(value)
 
     def __getitem__(self, key):
@@ -48,7 +49,7 @@ class Accounts:
         self.dict[key] = value
         with open('accounts.txt', 'w') as file:
             for key in self.dict:
-                key = key.decode('utf-8').replace("\n", "$")
+                key = key.replace("\n", "$")
                 file.write(key + ',' + str(value))
 
 accounts = Accounts()
@@ -151,17 +152,18 @@ class Blockchain:
         self.dht = dht
         self.is_miner = is_miner
         self.last_block = last_block
-        if os.stat('blockchain.txt').st_size == 0:
+        if os.stat('blockchain.txt').st_size != 0:
             with open('blockchain.txt', 'r') as file:
                 lines = file.readlines()
                 i = 0
                 for line in lines:
                     if i == 0:
-                        self.is_miner = int(line)
+                        self.is_miner = bool(line)
                     elif i == 1:
-                        self.last_block = json.loads(line, object_hook=Block)
+                        self.last_block = json.loads(line, object_hook=lambda args: Block(**args))
                     else:
-                        self.chain.append(json.loads(line, object_hook=Block))
+                        self.chain.append(json.loads(line, object_hook=lambda args: Block(**args)))
+                    i = i + 1
 
     def find_block_network(self, id):
         pass
@@ -178,13 +180,14 @@ class Blockchain:
         return True 
 
     def set_last_block(self, block):
-
         while self.last_block.id + 1 < block.id:
             # TODO: Update my last_block by asking the network
             # for the missing blocks
-            pass
+            break
 
-        if self.last_block.id + 1 == block.id and block.validate_proof() and self.tx_perform(block):
+        print(block.prev_hash)
+        print(self.last_block.hash())
+        if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
             self.last_block = block
             return True
 
@@ -213,7 +216,7 @@ class Blockchain:
         return False
 
     def create_block(self):
-        if self.is_miner and os.stat('transactions.txt').st_size == 0:
+        if self.is_miner and os.stat('transactions.txt').st_size != 0:
             with open('transactions.txt', 'r') as file:
                 lines = file.readlines()
                 block = Block(self.last_block.id + 1, self.last_block.prev_hash, key_string[1])
