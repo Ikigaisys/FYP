@@ -14,6 +14,15 @@ class FileStorage(IStorage):
         1
 
     def __setitem__(self, key, value):
+        if self.get(key, None) is not None:
+                """spamwriter = csv.writer('temp.txt', delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+                spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+                for row in spamreader:
+                        if row[0] == str(key):
+                                spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
+                        else: """                               
+                pass
+
         with open(self.file, 'a', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
