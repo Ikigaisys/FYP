@@ -46,7 +46,6 @@ class DHT:
 
         return True
 
-
     def server(self):
         try:
             self.loop.run_forever()
@@ -57,7 +56,10 @@ class DHT:
             self.loop.close()
 
     def reader(self):
-        send_node = (DHT.config.get('test', 'address'), DHT.config.getint('test', 'port'))
+        addresses = DHT.config.get('test', 'address').split(',')
+        ports = map(int, DHT.config.get('test', 'port').split(','))
+
+        send_nodes =  list(zip(addresses, ports))
         # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
 
         while True:
@@ -67,13 +69,13 @@ class DHT:
             split_data = data.split(',')
 
             if len(split_data) == 2:
-                asyncio.run_coroutine_threadsafe(self.node.bootstrap([send_node]), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
                 asyncio.run_coroutine_threadsafe(self.node.set(split_data[0], split_data[1]), self.loop)
 
             elif data == 'send':
-                asyncio.run_coroutine_threadsafe(self.node.bootstrap([send_node]), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
     
-                block = Block(0, None)
+                block = Block(1, None)
                 key = block.id
                 value = {
                     'type': 'block',
@@ -84,8 +86,8 @@ class DHT:
                 asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
 
             elif data == 'get':
-                asyncio.run_coroutine_threadsafe(self.node.bootstrap([send_node]), self.loop)
-                block = Block(0, None)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+                block = Block(1, None)
                 key = block.id
                 future = asyncio.run_coroutine_threadsafe(self.node.get(key), self.loop)
                 result = future.result(3)
