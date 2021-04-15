@@ -16,7 +16,7 @@ class FileStorage(IStorage):
     def __setitem__(self, key, value):
         with open(self.file, 'a', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
-                spamwriter.writerow([key, value, time.monotonic()])
+                spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
 
     def get(self, key, default=None):
         with open(self.file, 'r', newline='') as csvfile:
@@ -37,21 +37,21 @@ class FileStorage(IStorage):
         min_birthday = time.monotonic() - seconds_old
         ikeys = list()
         ivalues = list()
-        with open(self.file, 'r', newline='') as csvfile:
-                spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
-                for row in spamreader:
-                        if min_birthday >= row[2]:
-                                ikeys.append(row[0])
-                                ivalues.append(row[1])
+        #with open(self.file, 'r', newline='') as csvfile:
+        #        spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+        #        for row in spamreader:
+        #                if min_birthday >= row[2]:
+        #                        ikeys.append(row[0].encode())
+        #                        ivalues.append(row[1])
         return zip(ikeys, ivalues)
 
     def __iter__(self):
         self.cull()
         ikeys = list()
         ivalues = list()
-        with open(self.file, 'r', newline='') as csvfile:
-                spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
-                for row in spamreader:
-                        ikeys.append(row[0])
-                        ivalues.append(row[1])
+        #with open(self.file, 'r', newline='') as csvfile:
+        #        spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+        #        for row in spamreader:
+        #                ikeys.append(row[0].encode())
+        #                ivalues.append(row[1])
         return zip(ikeys, ivalues)
