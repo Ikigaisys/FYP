@@ -1,5 +1,6 @@
 from kademlia.storage import IStorage
 from os import path
+import os
 import csv
 import time
 
@@ -15,19 +16,24 @@ class FileStorage(IStorage):
 
     def __setitem__(self, key, value):
         if self.get(key, None) is not None:
-                """spamwriter = csv.writer('temp.txt', delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
-                spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
-                for row in spamreader:
-                        if row[0] == str(key):
-                                spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
-                        else: """                               
-                pass
-
+                with open(self.file+"temp.txt", 'w', newline='') as abc:
+                    spamwriter = csv.writer(abc, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+                    with open(self.file, 'r', newline='') as original:
+                        spamreader = csv.reader(original, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
+                        for row in spamreader:
+                                if row[0] == str(key):
+                                        spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
+                                else:
+                                        spamwriter.writerow(row)
+                os.remove(self.file)
+                os.rename(self.file+"temp.txt",self.file)
+                return
         with open(self.file, 'a', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
 
     def get(self, key, default=None):
+        key = key.decode('utf-8')
         with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
@@ -36,6 +42,7 @@ class FileStorage(IStorage):
         return default
 
     def __getitem__(self, key):
+        key = key.decode('utf-8')
         with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
