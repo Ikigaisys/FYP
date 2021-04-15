@@ -76,6 +76,7 @@ class DHT:
                 asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
     
                 block = Block(1, None)
+                block.nonce = block.proof_of_work()
                 key = block.id
                 value = {
                     'type': 'block',
