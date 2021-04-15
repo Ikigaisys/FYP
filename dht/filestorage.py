@@ -16,7 +16,7 @@ class FileStorage(IStorage):
 
     def __setitem__(self, key, value):
         if self.get(key, None) is not None:
-                with open(self.file+"temp.txt", 'w', newline='') as abc:
+                with open(self.file+'temp.txt', 'w', newline='') as abc:
                     spamwriter = csv.writer(abc, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                     with open(self.file, 'r', newline='') as original:
                         spamreader = csv.reader(original, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
@@ -26,8 +26,9 @@ class FileStorage(IStorage):
                                 else:
                                         spamwriter.writerow(row)
                 os.remove(self.file)
-                os.rename(self.file+"temp.txt",self.file)
+                os.rename(self.file+'temp.txt', self.file)
                 return
+                
         with open(self.file, 'a', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])

@@ -139,6 +139,11 @@ class Block:
         encoded_block = f'{self.__dict__}'.encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
+    def demo_create(self):
+        self.miner = key_string[1]
+        self.nonce = self.proof_of_work()
+
+
 class Blockchain:
 
     def __init__(self, dht, last_block = None, is_miner = True):
@@ -221,6 +226,7 @@ class Blockchain:
                     if tx.validate() and tx.verify():
                         block.add_transaction(tx)
 
+            block.miner = key_string[1]
             block.nonce = block.proof_of_work()
             # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
             # UPDATE ID AND REPEAT PROCEDURE
