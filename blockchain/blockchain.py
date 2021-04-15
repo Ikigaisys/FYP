@@ -121,7 +121,7 @@ class Block:
         check_proof = False
 
         while check_proof is False:
-            check_proof = self.validate_proof(self)
+            check_proof = self.validate_proof()
             if check_proof is False:
                 self.nonce += 1
                 if self.nonce % (100000 * 60) == 0:
@@ -131,7 +131,7 @@ class Block:
         self.nonce = ononce
         return temp
 
-    def validate_proof(self, block):
+    def validate_proof(self):
         block_hash = self.hash()
         return block_hash[:4] == "0000"
 
