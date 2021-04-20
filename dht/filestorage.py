@@ -22,7 +22,11 @@ class FileStorage(IStorage):
                         spamreader = csv.reader(original, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                         for row in spamreader:
                                 if row[0] == str(key):
-                                        spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
+                                        try:
+                                            key = key.decode('utf-8')
+                                        except:
+                                            pass
+                                        spamwriter.writerow([key, value, time.monotonic()])
                                 else:
                                         spamwriter.writerow(row)
                 os.remove(self.file)
@@ -31,7 +35,11 @@ class FileStorage(IStorage):
                 
         with open(self.file, 'a', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
-                spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
+                try:
+                    key = key.decode('utf-8')
+                except:
+                    pass
+                spamwriter.writerow([key, value, time.monotonic()])
 
     def get(self, key, default=None):
         try:
