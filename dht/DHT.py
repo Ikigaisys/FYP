@@ -75,7 +75,7 @@ class DHT:
             elif data == 'send':
                 asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
 
-                block = Block(1, None)
+                block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
                 block.demo_create()
                 print(block.hash())
                 key = block.id
@@ -84,7 +84,7 @@ class DHT:
                     'data': block.serialize()
                 }
                 value_encoded = json.dumps(value)
-#                self.storage(None, None, None, value_encoded)
+                self.storage(None, None, None, value_encoded)
                 asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
 
             elif data == 'get':
