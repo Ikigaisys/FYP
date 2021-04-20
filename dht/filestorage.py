@@ -34,7 +34,10 @@ class FileStorage(IStorage):
                 spamwriter.writerow([key.decode('utf-8'), value, time.monotonic()])
 
     def get(self, key, default=None):
-        key = key.decode('utf-8')
+        try:
+            key = key.decode('utf-8')
+        except:
+            pass
         with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
@@ -43,7 +46,10 @@ class FileStorage(IStorage):
         return default
 
     def __getitem__(self, key):
-        key = key.decode('utf-8')
+        try:
+            key = key.decode('utf-8')
+        except:
+            pass
         with open(self.file, 'r', newline='') as csvfile:
                 spamreader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
                 for row in spamreader:
