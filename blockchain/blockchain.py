@@ -94,7 +94,7 @@ class Block:
     def __init__(self, id, prev_hash, miner=None, timestamp=None, nonce=None, data=[]):
         self.id = id
         if timestamp is None:
-            self.timestamp = datetime.timestamp(datetime.now()) / 1000  # in unix seconds
+            self.timestamp = int(datetime.timestamp(datetime.now()) / 1000)  # in unix seconds
         else:
             self.timestamp = timestamp        
         self.prev_hash = prev_hash
