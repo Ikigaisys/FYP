@@ -5,6 +5,7 @@ from flask import Flask, jsonify
 from datetime import datetime
 from json import JSONEncoder
 from .encryption import Signatures
+from FileController import FileHashTable
 
 class Key:
 
@@ -31,28 +32,7 @@ key_string = key.to_string()
 f1.close()
 f2.close()
 
-class Accounts:
-
-    def __init__(self):
-        self.dict = {}
-        with open('accounts.txt', 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                key, value = line.split(',')
-                key = key.replace("$", "\n")
-                self.dict[key] = int(value)
-
-    def __getitem__(self, key):
-        return self.dict[key]
-
-    def __setitem__(self, key, value):
-        self.dict[key] = value
-        with open('accounts.txt', 'w') as file:
-            for key in self.dict:
-                key = key.replace("\n", "$")
-                file.write(key + ',' + str(value))
-
-accounts = Accounts()
+accounts = FileHashTable('accounts.txt')
 
 class Domain:
 

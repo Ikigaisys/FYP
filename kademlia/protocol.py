@@ -12,12 +12,13 @@ log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class KademliaProtocol(RPCProtocol):
-    def __init__(self, source_node, storage, ksize, callback):
+    def __init__(self, source_node, storage, ksize, callback, broadcast_table):
         RPCProtocol.__init__(self)
         self.router = RoutingTable(self, ksize, source_node)
         self.storage = storage
         self.source_node = source_node
         self.callback = callback
+        self.broadcast_table = broadcast_table
 
     def get_refresh_ids(self):
         """
@@ -113,6 +114,7 @@ class KademliaProtocol(RPCProtocol):
                 this_closest = self.source_node.distance_to(keynode) < first
             if not neighbors or (new_node_close and this_closest):
                 asyncio.ensure_future(self.call_store(node, key, value))
+        self.broadcast_table[node.ip] = node.port
         self.router.add_contact(node)
 
     def handle_call_response(self, result, node):

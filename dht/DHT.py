@@ -8,6 +8,7 @@ import json
 from .filestorage import FileStorage
 from kademlia.network import Server
 from blockchain.blockchain import Blockchain, Block
+from FileController import FileHashTable
 
 class DHT:
 
@@ -23,6 +24,7 @@ class DHT:
         self.log.addHandler(self.handler)
         self.log.setLevel(logging.DEBUG)
         self.port = DHT.config.getint('server', 'port')
+        self.all_ips_hashtable = FileHashTable('all_ips.txt')
 
         # Blockchain 
         self.chain = Blockchain(self, Block(0, None))
@@ -31,7 +33,7 @@ class DHT:
         self.loop = asyncio.get_event_loop()
         self.loop.set_debug(True)
 
-        self.node = Server(storage=FileStorage(storage_file))
+        self.node = Server(storage=FileStorage(storage_file), broadcast_table=self.all_ips_hashtable)
         # asyncio.run(self.bootstrapper())
         self.loop.create_task(self.node.listen(self.port, self.storage))
 
