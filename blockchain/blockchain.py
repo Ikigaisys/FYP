@@ -6,6 +6,7 @@ from datetime import datetime
 from json import JSONEncoder
 from .encryption import Signatures
 from FileController import FileHashTable
+from kademlia.node import Node
 
 class Key:
 
@@ -214,8 +215,17 @@ class Blockchain:
             # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
             # UPDATE ID AND REPEAT PROCEDURE
             # TODO: SEND THIS BLOCK TO OTHERS
-            self.tx_perform(block)
-            open('transactions.txt', 'w').close()
+            if self.dht.server.protocol:
+                for key,value in self.dht.all_ips_hashtable.items():
+                    node = Node(key, value.split(':')[0], value.split(':')[1])
+                    key = block.id
+                    value = {
+                        'type': 'block',
+                        'data': block.serialize()
+                    }
+                    self.dht.server.protocol.call_store(node, key, value)
+                self.tx_perform(block)
+                open('transactions.txt', 'w').close()
             return block
 
 
