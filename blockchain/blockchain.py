@@ -56,20 +56,23 @@ class Transaction:
         self.amount = amount
         self.fee = fee
         if time == None:
-            self.time = datetime.now() / 1000
+            self.time = int(datetime.now() / 1000)
         self.details = { 'category': category, 'sender': sender, 'receiver': receiver }
         self.signature = None
 
     def validate(self):
+        # Check if the sender can send the money
         if accounts[self.details['sender']] - self.fee - self.amount > 0:
             return True
         return False
 
     def sign(self, private_key):
+        # Sign using the private key
         sig = Signatures()
         self.signature = sig.sign(private_key, json.dumps(self.__dict__, sort_keys=True))
 
     def verify(self):
+        # Verify this transaction true/false
         sig = Signatures()
         public_key = sig.string_to_key(None, self.details['sender'])
         temp = self.signature
