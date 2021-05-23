@@ -114,7 +114,7 @@ class KademliaProtocol(RPCProtocol):
                 this_closest = self.source_node.distance_to(keynode) < first
             if not neighbors or (new_node_close and this_closest):
                 asyncio.ensure_future(self.call_store(node, key, value))
-        self.broadcast_table[node.ip] = str(node.id) + ':' + str(node.port)
+        self.broadcast_table[node.ip] = node.id.hex() + ':' + str(node.port)
         self.router.add_contact(node)
 
     def handle_call_response(self, result, node):

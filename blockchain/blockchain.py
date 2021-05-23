@@ -30,20 +30,20 @@ if(not os.path.exists('pvk.txt') or not os.path.exists('pbk.txt')):
     f1 = open('pvk.txt','w')
     f2 = open('pbk.txt','w')
     pvt, pbk = Key().to_string()
-    f1.write(pvt)
-    f2.write(pbk)
+    f1.write(pvt.replace('\n', '$'))
+    f2.write(pbk.replace('\n', '$'))
     f1.close()
     f2.close()
 
 f1 = open('pvk.txt','r')
 f2 = open('pbk.txt','r')
-key = Key(f1.read(), f2.read())
+key = Key(f1.read().replace('$', '\n'), f2.read().replace('$', '\n'))
 key_string = key.to_string()
 f1.close()
 f2.close()
 
 accounts = FileHashTable('accounts.txt')
-
+        
 class Domain:
 
     def __init__(self):
@@ -57,28 +57,28 @@ class Transaction:
         self.amount = amount
         self.fee = fee
         if time == None:
-            self.time = int(datetime.now() / 1000)
+            self.time = int(datetime.now().timestamp() / 1000)
         self.details = { 'category': category, 'sender': sender, 'receiver': receiver }
         self.signature = None
 
     def validate(self):
         # Check if the sender can send the money
-        if accounts[self.details['sender']] - self.fee - self.amount > 0:
+        if accounts[self.details['sender']] is not None and accounts[self.details['sender']] - self.fee - self.amount > 0:
             return True
         return False
 
     def sign(self, private_key):
         # Sign using the private key
         sig = Signatures()
-        self.signature = sig.sign(private_key, json.dumps(self.__dict__, sort_keys=True))
+        self.signature = sig.sign(private_key, str.encode(json.dumps(self.__dict__, sort_keys=True)))
 
     def verify(self):
         # Verify this transaction true/false
         sig = Signatures()
-        public_key = sig.string_to_key(None, self.details['sender'])
+        tmp, public_key = sig.string_to_key(None, self.details['sender'].encode())
         temp = self.signature
         self.signature = None
-        temp2 = sig.verify(public_key, json.dumps(self.__dict__, sort_keys=True), temp)
+        temp2 = sig.verify(public_key, str.encode(json.dumps(self.__dict__, sort_keys=True)), temp)
         self.signature = temp
         return temp2
 
@@ -105,7 +105,7 @@ class Block:
         pass
 
     def serialize(self):
-        return json.dumps(self.__dict__, sort_keys=True)
+        return json.dumps(todict(self), sort_keys=True)
 
     def proof_of_work(self):
         #previous_proof = last_block.proof
@@ -163,8 +163,11 @@ class Blockchain:
         key = id
         future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
         result = future.result(5)
+        if(result is None):
+            return None
+
         data = json.loads(result)
-        if(data['type'] is not 'block'):
+        if(data['type'] != 'block'):
             print("Oh no :( block lost, lolbye")
             return None
         
@@ -194,7 +197,7 @@ class Blockchain:
 
             # If transaction type is domain, money should be burnt
             if tx.details.category == 'domain':
-                if tx.receiver == 0:
+                if tx.receiver == 0 and tx.amount == 1:
                     accounts[tx.sender] -= tx.amount + tx.fee
                     accounts[block.miner] += tx.fee
                 else:
@@ -227,6 +230,10 @@ class Blockchain:
                 return False
 
         if self.last_block.id == block.id:
+
+            if self.last_block.hash() == block.hash():
+                return True
+
             print("Network gave me last block, don't trust this new one")
             return False
 
@@ -272,18 +279,25 @@ class Blockchain:
                     if len(line.split(',')) < 5:
                         continue
                     amount, fee, category, sender, receiver, private_key = line.split(',')
-                    tx = Transaction(amount, fee, category, sender, receiver)
+                    sender = sender.replace('$', '\n')
+                    receiver = receiver.replace('$', '\n')
+
+                    tx = Transaction(float(amount), float(fee), category, sender, receiver)
+                    sig = Signatures()
+                    private_key, tmp = sig.string_to_key(private_key.replace('$', '\n').encode(), None)
                     tx.sign(private_key)
+
                     if tx.validate() and tx.verify():
                         block.add_transaction(tx)
 
             block.miner = key_string[1]
             block.nonce = block.proof_of_work()
+            
             # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
             # UPDATE ID AND REPEAT PROCEDURE
             
-            block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
-            block.demo_create()
+            #block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
+            #block.demo_create()
             print(block.hash())
             key = block.id
             value = {
@@ -291,13 +305,34 @@ class Blockchain:
                 'data': block.serialize()
             }
             value_encoded = json.dumps(value)
-            self.storage(None, None, None, value_encoded)
-            asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
+            print(value_encoded)
+            #self.dht.storage(None, None, None, value_encoded)
+            self.dht.broadcast(key, value_encoded)
 
-            self.tx_perform(block)
-            open('transactions.txt', 'w').close()
+            if(self.set_last_block(block)):
+                #self.tx_perform(block)
+                open('transactions.txt', 'w').close()
             return block
 
+def todict(obj, classkey=None):
+    if isinstance(obj, dict):
+        data = {}
+        for (k, v) in obj.items():
+            data[k] = todict(v, classkey)
+        return data
+    elif hasattr(obj, "_ast"):
+        return todict(obj._ast())
+    elif hasattr(obj, "__iter__") and not isinstance(obj, str):
+        return [todict(v, classkey) for v in obj]
+    elif hasattr(obj, "__dict__"):
+        data = dict([(key, todict(value, classkey)) 
+            for key, value in obj.__dict__.items() 
+            if not callable(value) and not key.startswith('_')])
+        if classkey is not None and hasattr(obj, "__class__"):
+            data[classkey] = obj.__class__.__name__
+        return data
+    else:
+        return obj
 
 """if __name__ == '__main__':
     #    import pickle
