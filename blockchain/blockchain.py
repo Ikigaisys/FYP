@@ -6,6 +6,7 @@ from datetime import datetime
 from json import JSONEncoder
 from .encryption import Signatures
 from FileController import FileHashTable
+import asyncio
 
 class Key:
 
@@ -157,25 +158,77 @@ class Blockchain:
                         self.chain.append(json.loads(line, object_hook=lambda args: Block(**args)))
                     i = i + 1
 
+    # Find the block on the network
     def find_block_network(self, id):
-        pass
+        key = id
+        future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
+        result = future.result(5)
+        data = json.loads(result)
+        if(data['type'] is not 'block'):
+            print("Oh no :( block lost, lolbye")
+            return None
+        
+        data = data['data']
+        block = Block(data['id'], data['prev_hash'], data['miner'], data['timestamp'], data['nonce'], None)
+        block.data = list()
+        for tx in data['data']:
+            t = Transaction(tx['amount'], tx['fee'], tx['category'], tx['sender'], tx['receiver'], tx['time'])
+            t.signature = tx['signature']
+            block.data.append(t)
 
+        if not block.validate_proof():
+            print("INVALID BLOCK HACKING ATTEMPTS REEEEEEEEEEEEEEEEEEEE")
+            return None
+        
+        return block
+        
+
+    # Block received/created, update the account data for each person by
+    # performing transactions
+    # TODO: Rollback when a transaction is invalid...
     def tx_perform(self, block):
         txs = block.get_transactions()
         for tx in txs:
             if not tx.validate() or not tx.verify():
                 return False
-            accounts[tx.sender] -= tx.amount + tx.fee
-            accounts[tx.receiver] += tx.amount
-            accounts[block.miner] += tx.fee
+
+            # If transaction type is domain, money should be burnt
+            if tx.details.category == 'domain':
+                if tx.receiver == 0:
+                    accounts[tx.sender] -= tx.amount + tx.fee
+                    accounts[block.miner] += tx.fee
+                else:
+                    return False
+
+            else:
+                accounts[tx.sender] -= tx.amount + tx.fee
+                accounts[tx.receiver] += tx.amount
+                accounts[block.miner] += tx.fee
+
         accounts[block.miner] += 20
         return True 
 
+    # Block received, update the chain by performing transactions
     def set_last_block(self, block):
-        while self.last_block.id + 1 < block.id:
-            # TODO: Update my last_block by asking the network
-            # for the missing blocks
-            break
+        # The block sent to me isnt the next block, eg: im at #3 and i get sent #6,
+        # holes in-between 
+        while self.last_block.id < block.id:
+            # 3 attempts for finding new block
+            found = False
+            for i in range(3):
+                block = self.find_block_network(self.last_block.id + 1)
+                # New block found, attempt to update my last block
+                if block is not None:
+                    if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
+                        self.last_block = block
+                        found = True
+                        break
+            if not found:
+                return False
+
+        if self.last_block.id == block.id:
+            print("Network gave me last block, don't trust this new one")
+            return False
 
         print(block.prev_hash)
         print(self.last_block.hash())
@@ -188,6 +241,7 @@ class Blockchain:
 
         return False
 
+    # Add the block to the chain
     def chain_append(self, block):
         self.chain.append(block)
         with open('blockchain.txt', 'w') as file:
@@ -196,6 +250,7 @@ class Blockchain:
             for block in self.chain:
                 file.write(json.dumps(block.__dict__, sort_keys = True) + '\n')
 
+    # Try to accept a new incoming block
     def accept_block(self, block):
         # Handle newer blocks
         if self.set_last_block(block):
@@ -207,6 +262,7 @@ class Blockchain:
             return True
         return False
 
+    # Create a new block
     def create_block(self):
         if self.is_miner and os.stat('transactions.txt').st_size != 0:
             with open('transactions.txt', 'r') as file:
@@ -225,7 +281,19 @@ class Blockchain:
             block.nonce = block.proof_of_work()
             # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
             # UPDATE ID AND REPEAT PROCEDURE
-            # TODO: SEND THIS BLOCK TO OTHERS
+            
+            block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
+            block.demo_create()
+            print(block.hash())
+            key = block.id
+            value = {
+                'type': 'block',
+                'data': block.serialize()
+            }
+            value_encoded = json.dumps(value)
+            self.storage(None, None, None, value_encoded)
+            asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)
+
             self.tx_perform(block)
             open('transactions.txt', 'w').close()
             return block

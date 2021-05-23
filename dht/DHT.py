@@ -41,6 +41,7 @@ class DHT:
         data = json.loads(value)
 
         if data['type'] == 'block':
+            print("hewo")
             block = json.loads(data['data'], object_hook=lambda args: Block(**args))
             if self.chain.accept_block(block):
                 return True
@@ -64,7 +65,7 @@ class DHT:
         send_nodes =  list(zip(addresses, ports))
 
         # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
-        
+
         while True:
             # block = chain.create_block()
 
