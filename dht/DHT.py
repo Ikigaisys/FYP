@@ -65,9 +65,10 @@ class DHT:
         addresses = DHT.config.get('test', 'address').split(',')
         ports = map(int, DHT.config.get('test', 'port').split(','))
 
-        send_nodes = list(zip(addresses, ports))
-        # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
+        send_nodes =  list(zip(addresses, ports))
 
+        # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
+        
         while True:
             # block = chain.create_block()
 
@@ -98,12 +99,9 @@ class DHT:
                 self.storage(None, None, None, value_encoded)
                 asyncio.run_coroutine_threadsafe(self.node.set(key, value_encoded), self.loop)'''
             elif data == 'get':
-                asyncio.run_coroutine_threadsafe(
-                    self.node.bootstrap(send_nodes), self.loop)
-                block = Block(1, None)
-                key = block.id
-                future = asyncio.run_coroutine_threadsafe(
-                    self.node.get(key), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+                key = 2 # Test: get block # 2
+                future = asyncio.run_coroutine_threadsafe(self.node.get(key), self.loop)
                 result = future.result(3)
                 print(result)
 
