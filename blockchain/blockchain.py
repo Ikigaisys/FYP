@@ -25,6 +25,15 @@ class Key:
         pvt, pb = sig.key_to_string(self.private_key, self.public_key)
         return pvt.decode('utf-8'), pb.decode('utf-8')
 
+if(not os.path.exists('pvk.txt') or not os.path.exists('pbk.txt')):
+    f1 = open('pvk.txt','w')
+    f2 = open('pbk.txt','w')
+    pvt, pbk = Key().to_string()
+    f1.write(pvt)
+    f2.write(pbk)
+    f1.close()
+    f2.close()
+
 f1 = open('pvk.txt','r')
 f2 = open('pbk.txt','r')
 key = Key(f1.read(), f2.read())
