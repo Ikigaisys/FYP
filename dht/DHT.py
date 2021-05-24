@@ -121,11 +121,11 @@ class DHT:
                 result = future.result(3)
                 print(result)"""
 
-    def broadcast(self, key, value):
+    def broadcast(self, _key, _value):
         for key, value in self.all_ips_hashtable.dict.items():
             v = value.split(":")
             asyncio.run_coroutine_threadsafe(
-                self.chain.dht.node.protocol.call_store(Node(digest(int(v[0], 16)), key, int(v[1])), digest(key), value), 
+                self.chain.dht.node.protocol.call_store(Node(digest(int(v[0], 16)), _key, int(v[1])), digest(key), _value), 
                 self.loop)
 
 

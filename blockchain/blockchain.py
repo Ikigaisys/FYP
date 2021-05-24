@@ -6,6 +6,7 @@ from datetime import datetime
 from json import JSONEncoder
 from .encryption import Signatures
 from FileController import FileHashTable
+from configparser import ConfigParser
 import asyncio
 
 class Key:
@@ -26,21 +27,23 @@ class Key:
         pvt, pb = sig.key_to_string(self.private_key, self.public_key)
         return pvt.decode('utf-8'), pb.decode('utf-8')
 
-if(not os.path.exists('pvk.txt') or not os.path.exists('pbk.txt')):
-    f1 = open('pvk.txt','w')
-    f2 = open('pbk.txt','w')
+config = ConfigParser()
+config.read('config.ini')
+if not config.has_section('keys') or not config.has_option('keys', 'public_key') or not config.has_option('keys', 'private_key'):
     pvt, pbk = Key().to_string()
-    f1.write(pvt.replace('\n', '$'))
-    f2.write(pbk.replace('\n', '$'))
-    f1.close()
-    f2.close()
+    if not config.has_section('keys'):
+        config.add_section('keys')
+        
+    config['keys']['private_key'] = pvt.replace('\n', '$')
+    config['keys']['public_key'] = pbk.replace('\n', '$')
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
 
-f1 = open('pvk.txt','r')
-f2 = open('pbk.txt','r')
-key = Key(f1.read().replace('$', '\n'), f2.read().replace('$', '\n'))
-key_string = key.to_string()
-f1.close()
-f2.close()
+if config.has_section('keys') and config.has_option('keys', 'public_key') and config.has_option('keys', 'private_key'):
+    k1 = config.get('keys', 'private_key').replace('$', '\n')
+    k2 = config.get('keys', 'public_key').replace('$', '\n')
+    key = Key(k1, k2)
+    key_string = key.to_string()
 
 accounts = FileHashTable('accounts.txt')
         
@@ -205,6 +208,8 @@ class Blockchain:
 
             else:
                 accounts[tx.sender] -= tx.amount + tx.fee
+                if accounts[tx.receiver] is None:
+                    accounts[tx.receiver] = 0
                 accounts[tx.receiver] += tx.amount
                 accounts[block.miner] += tx.fee
 
@@ -221,6 +226,7 @@ class Blockchain:
             for i in range(3):
                 block = self.find_block_network(self.last_block.id + 1)
                 # New block found, attempt to update my last block
+                print(block)
                 if block is not None:
                     if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
                         self.last_block = block
