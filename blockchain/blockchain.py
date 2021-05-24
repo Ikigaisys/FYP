@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import time
 from flask import Flask, jsonify
 from datetime import datetime
 from json import JSONEncoder
@@ -232,6 +233,7 @@ class Blockchain:
                         self.last_block = block
                         found = True
                         break
+                time.sleep(3)
             if not found:
                 return False
 
@@ -314,6 +316,7 @@ class Blockchain:
             print(value_encoded)
             #self.dht.storage(None, None, None, value_encoded)
             self.dht.broadcast(key, value_encoded)
+            time.sleep(3)
 
             if(self.set_last_block(block)):
                 #self.tx_perform(block)

@@ -3,6 +3,7 @@ import threading
 import logging
 import asyncio
 import os
+import random
 from configparser import ConfigParser
 import json
 from .filestorage import FileStorage
@@ -16,6 +17,13 @@ class DHT:
 
     config = ConfigParser()
     config.read('config.ini')
+
+    if not config.has_section('node'):
+        config.add_section('node')
+    if not config.has_option('node', 'id'):
+        config['node']['id'] = digest(random.getrandbits(255)).hex()
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
 
     def __init__(self, storage_file):
         # Logging
@@ -33,7 +41,8 @@ class DHT:
         self.loop = asyncio.get_event_loop()
         self.loop.set_debug(True)
 
-        self.node = Server(storage=FileStorage(storage_file),
+        self.node = Server(storage=FileStorage(storage_file), 
+                           node_id=bytes.fromhex(DHT.config['node']['id']),
                            broadcast_table=self.all_ips_hashtable)
         # asyncio.run(self.bootstrapper())
         self.loop.create_task(self.node.listen(self.port, self.storage))
@@ -122,10 +131,10 @@ class DHT:
                 print(result)"""
 
     def broadcast(self, _key, _value):
-        for key, value in self.all_ips_hashtable.dict.items():
-            v = value.split(":")
+        for node_id, value in self.all_ips_hashtable.dict.items():
+            ip, port = value.split(":")
             asyncio.run_coroutine_threadsafe(
-                self.chain.dht.node.protocol.call_store(Node(digest(int(v[0], 16)), _key, int(v[1])), digest(key), _value), 
+                self.chain.dht.node.protocol.call_store(Node(digest(int(node_id, 16)), ip, int(port)), digest(_key), _value), 
                 self.loop)
 
 

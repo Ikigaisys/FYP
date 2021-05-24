@@ -10,7 +10,7 @@ class FileHashTable:
                 lines = file.readlines()
                 for line in lines:
                     key, value = line.split(',')
-                    key = key.replace("$", "\n")
+                    value = value.replace("\n", "")
                     try:
                         self.dict[key] = int(value)
                     except:
@@ -26,4 +26,4 @@ class FileHashTable:
         with open(self.filename, 'w') as file:
             for key in self.dict:
                 key = key.replace("\n", "$")
-                file.write(key + ',' + str(value))
+                file.write(key + ',' + str(value) + "\n")
