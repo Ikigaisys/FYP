@@ -163,8 +163,6 @@ class Blockchain:
                 i = 0
                 for line in lines:
                     if i == 0:
-                        self.is_miner = bool(line)
-                    elif i == 1:
                         self.last_block = json.loads(line, object_hook=lambda args: Block(**args))
                     else:
                         self.chain.append(json.loads(line, object_hook=lambda args: Block(**args)))
@@ -285,7 +283,6 @@ class Blockchain:
             self.chain.append(block)
 
         with open('blockchain.txt', 'w') as file:
-            file.write(str(self.is_miner) + '\n')
             file.write(json.dumps(todict(self.last_block), sort_keys = True) + '\n')
             for block in self.chain:
                 file.write(json.dumps(todict(block), sort_keys = True) + '\n')

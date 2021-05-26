@@ -47,7 +47,7 @@ class DHT:
         self.loop.create_task(self.node.listen(self.port, self.receive_callback))
 
         # Blockchain
-        self.chain = Blockchain(self, Block(0, None))
+        self.chain = Blockchain(self, Block(0, None), DHT.config.getboolean('blockchain', 'miner'))
 
     def receive_callback(self, sender, nodeid, key, value):
         data = json.loads(value)
