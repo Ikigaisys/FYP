@@ -25,5 +25,4 @@ class FileHashTable:
         self.dict[key] = value
         with open(self.filename, 'w') as file:
             for key in self.dict:
-                key = key.replace("\n", "$")
                 file.write(key + ',' + str(value) + "\n")

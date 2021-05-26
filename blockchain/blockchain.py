@@ -35,14 +35,14 @@ if not config.has_section('keys') or not config.has_option('keys', 'public_key')
     if not config.has_section('keys'):
         config.add_section('keys')
         
-    config['keys']['private_key'] = pvt.replace('\n', '$')
-    config['keys']['public_key'] = pbk.replace('\n', '$')
+    config['keys']['private_key'] = pvt.replace('\n', '$$')
+    config['keys']['public_key'] = pbk.replace('\n', '$$')
     with open('config.ini', 'w') as configfile:
         config.write(configfile)
 
 if config.has_section('keys') and config.has_option('keys', 'public_key') and config.has_option('keys', 'private_key'):
-    k1 = config.get('keys', 'private_key').replace('$', '\n')
-    k2 = config.get('keys', 'public_key').replace('$', '\n')
+    k1 = config.get('keys', 'private_key').replace('$$', '\n')
+    k2 = config.get('keys', 'public_key').replace('$$', '\n')
     key = Key(k1, k2)
     key_string = key.to_string()
 
@@ -67,7 +67,8 @@ class Transaction:
 
     def validate(self):
         # Check if the sender can send the money
-        if accounts[self.details['sender']] is not None and accounts[self.details['sender']] - self.fee - self.amount > 0:
+        sender = self.details['sender'].replace('\n', '$$')
+        if accounts[sender] is not None and accounts[sender] - self.fee - self.amount > 0:
             return True
         return False
 
@@ -206,26 +207,30 @@ class Blockchain:
     # TODO: Rollback when a transaction is invalid...
     def tx_perform(self, block):
         txs = block.get_transactions()
+        miner = block.miner.replace('\n', '$$')
         for tx in txs:
             if not tx.validate() or not tx.verify():
                 return False
 
+            sender = tx.sender.replace('\n', '$$')
+            receiver = tx.receiver.replace('\n', '$$')
+
             # If transaction type is domain, money should be burnt
             if tx.details.category == 'domain':
                 if tx.receiver == 0 and tx.amount == 1:
-                    accounts[tx.sender] -= tx.amount + tx.fee
-                    accounts[block.miner] += tx.fee
+                    accounts[sender] -= tx.amount + tx.fee
+                    accounts[miner] += tx.fee
                 else:
                     return False
 
             else:
-                accounts[tx.sender] -= tx.amount + tx.fee
-                if accounts[tx.receiver] is None:
-                    accounts[tx.receiver] = 0
-                accounts[tx.receiver] += tx.amount
-                accounts[block.miner] += tx.fee
+                accounts[sender] -= tx.amount + tx.fee
+                if accounts[receiver] is None:
+                    accounts[receiver] = 0
+                accounts[receiver] += tx.amount
+                accounts[miner] += tx.fee
 
-        accounts[block.miner] += 20
+        accounts[miner] += 20
         return True 
 
     # Block received, update the chain by performing transactions
@@ -296,18 +301,24 @@ class Blockchain:
                 block = Block(self.last_block.id + 1, self.last_block.prev_hash, key_string[1])
                 for line in lines:
                     if len(line.split(',')) < 5:
+                        print('wut')
                         continue
                     amount, fee, category, sender, receiver, private_key = line.split(',')
-                    sender = sender.replace('$', '\n')
-                    receiver = receiver.replace('$', '\n')
+                    sender = sender.replace('$$', '\n')
+                    receiver = receiver.replace('$$', '\n')
 
                     tx = Transaction(float(amount), float(fee), category, sender, receiver)
                     sig = Signatures()
-                    private_key, tmp = sig.string_to_key(private_key.replace('$', '\n').encode(), None)
+                    private_key, tmp = sig.string_to_key(private_key.replace('$$', '\n').encode(), None)
                     tx.sign(private_key)
 
                     if tx.validate() and tx.verify():
                         block.add_transaction(tx)
+                    else:
+                        if not tx.validate():
+                            print('!val')
+                        if not tx.verify():
+                            print('!verify')
 
             block.miner = key_string[1]
             block.nonce = block.proof_of_work()
