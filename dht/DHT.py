@@ -76,13 +76,11 @@ class DHT:
             self.loop.close()
 
     def reader(self):
-        addresses = DHT.config.get('test', 'address').split(',')
-        ports = map(int, DHT.config.get('test', 'port').split(','))
-
+        addresses = DHT.config.get('bootstrap', 'address').split(',')
+        ports = map(int, DHT.config.get('bootstrap', 'port').split(','))
         send_nodes =  list(zip(addresses, ports))
         time.sleep(1)
-        asyncio.run_coroutine_threadsafe(
-        self.node.bootstrap(send_nodes), self.loop)
+        asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
 
         while True:
             # block = chain.create_block()
@@ -146,7 +144,7 @@ class DHT:
         asyncio.run_coroutine_threadsafe(self.node.set(_key, _value), self.loop)
 
     def get(self, _key):
-        future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
+        future = asyncio.run_coroutine_threadsafe(self.node.get(_key), self.loop)
         try:
             result = future.result(5)
         except:

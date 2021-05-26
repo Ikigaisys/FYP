@@ -174,7 +174,7 @@ class Blockchain:
 
         result = self.dht.get(key)
         if result is None:
-            print("Weird none result, quitting")
+            print("Nothing received from network, no block")
             return None
 
         data = json.loads(result)
@@ -247,16 +247,18 @@ class Blockchain:
                         found = True
                         break
                 time.sleep(3)
-            if not found:
-                break
+            
+            # Holes in my chain that I'm unable to fill
+            if not found and self.last_block.id + 1 < block.id:
+                return False
 
         if self.last_block.id == block.id:
 
             if self.last_block.hash() == block.hash():
                 return True
-
-            print("Network gave me a different last block, don't trust this new one")
-            return False
+            else:
+                print("Network gave me a different last block, don't trust this new one")
+                return False
 
         if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
             self.last_block = block
@@ -276,7 +278,7 @@ class Blockchain:
         # Handle append in array/replacement in array
         found = False
         for blk, i in enumerate(self.chain):
-            if blk.id == block.id:
+            if self.chain[blk].id == block.id:
                 self.chain[i] = block 
                 found = True
         if not found:
@@ -376,10 +378,14 @@ class Blockchain:
             # someone sent the block => will try finding this block
             # on network and update self only when network has agreed 
             # on this block as the next
-            if(self.chain_update(block)):
+            blk = self.find_block_network(block.id)
+            if(blk is not None and blk.hash() == block.hash()):
+                self.tx_perform(block)
+                self.last_block = block
                 self.chain_append(block)
                 open('transactions.txt', 'w').close()
-            return block
+            else:
+                print("Discarding block, network did not accept")
 
 def todict(obj, classkey=None):
     if isinstance(obj, dict):
