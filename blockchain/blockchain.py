@@ -140,6 +140,11 @@ class Block:
         encoded_block = f'{todict(self)}'.encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
+    def hash_stored(self):
+        if hasattr(self, 'stored_hash'):
+            return stored_hash
+        return hash()
+
     def demo_create(self):
         self.miner = key_string[1]
         self.nonce = self.proof_of_work()
@@ -168,15 +173,10 @@ class Blockchain:
     # Find the block on the network
     def find_block_network(self, id):
         key = id
-        future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
 
-        try:
-            result = future.result(5)
-            if(result is None):
-                print("Weird none result, quitting")
-                return None
-        except:
-            print("No response received")
+        result = self.dht.get(key)
+        if result is None:
+            print("Weird none result, quitting")
             return None
 
         data = json.loads(result)
@@ -232,8 +232,9 @@ class Blockchain:
         accounts[miner] += 20
         return True 
 
-    # Block received, update the chain by performing transactions
-    def set_last_block(self, block):
+    # Update the chain by performing missing/new transactions
+    # Update last_block attribute
+    def chain_update(self, block):
         # The block sent to me isnt the next block, eg: im at #3 and i get sent #6,
         # holes in-between 
         while self.last_block.id < block.id:
@@ -256,11 +257,9 @@ class Blockchain:
             if self.last_block.hash() == block.hash():
                 return True
 
-            print("Network gave me last block, don't trust this new one")
+            print("Network gave me a different last block, don't trust this new one")
             return False
 
-        print(block.prev_hash)
-        print(self.last_block.hash())
         if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
             self.last_block = block
             return True
@@ -271,8 +270,20 @@ class Blockchain:
         return False
 
     # Add the block to the chain
-    def chain_append(self, block):
-        self.chain.append(block)
+    def chain_append(self, block, keep_data = True):
+        # Strip data for mini-chain
+        if not keep_data:
+            block.data = None
+
+        # Handle append in array/replacement in array
+        found = False
+        for blk, i in enumerate(self.chain):
+            if blk.id == block.id:
+                self.chain[i] = block 
+                found = True
+        if not found:
+            self.chain.append(block)
+
         with open('blockchain.txt', 'w') as file:
             file.write(str(self.is_miner) + '\n')
             file.write(json.dumps(todict(self.last_block), sort_keys = True) + '\n')
@@ -280,15 +291,37 @@ class Blockchain:
                 file.write(json.dumps(todict(block), sort_keys = True) + '\n')
 
     # Try to accept a new incoming block
-    def accept_block(self, block):
-        # Handle newer blocks
-        if self.set_last_block(block):
-            self.chain_append(block)
+    def accept_block(self, block, keep_data = True):
+        # Handle a newly created block
+        if self.chain_update(block):
+            self.chain_append(block, keep_data)
             return True
-        # Handle older blocks (Don't do transactions again)
+
+        # Handle older blocks (Don't perform transactions again, just store)
         if self.last_block.id > block.id:
-            self.chain_append(block)
-            return True
+            find_block = None
+            find_prev_block = None
+            # Find in mini-chain
+            for blk in self.chain:
+                if blk.id == block.id:
+                    find_block = blk
+                if blk.id == block.id - 1:
+                    find_prev_block = blk
+
+            # Is it valid?
+            if (find_block is not None and find_prev_block is not None and 
+                block.prev_hash == find_prev_block.hash_stored() and 
+                block.hash() == find_block.hash_stored() and 
+                block.validate_proof()):
+
+                for ts in block.data:
+                    if not ts.validate() or not ts.verify():
+                        print('The old block has an invalid transaction..')
+
+                self.chain_append(block, keep_data)
+                return True
+            else:
+                print("Block store request ignored...")
         return False
 
     # Create a new block
@@ -299,7 +332,7 @@ class Blockchain:
                 block = Block(self.last_block.id + 1, self.last_block.hash(), key_string[1])
                 for line in lines:
                     if len(line.split(',')) < 5:
-                        print('wut')
+                        print('Invalid transaction split size')
                         continue
                     amount, fee, category, sender, receiver, private_key = line.split(',')
                     sender = sender.replace('$$', '\n')
@@ -313,10 +346,7 @@ class Blockchain:
                     if tx.validate() and tx.verify():
                         block.add_transaction(tx)
                     else:
-                        if not tx.validate():
-                            print('!val')
-                        if not tx.verify():
-                            print('!verify')
+                        print("Invalid transaction detected, skipping!")
 
             block.miner = key_string[1]
             block.nonce = block.proof_of_work()
@@ -326,20 +356,31 @@ class Blockchain:
             
             #block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
             #block.demo_create()
-            print(block.hash())
+            print(block.hash() + " found for new block")
             key = block.id
             value = {
                 'type': 'block',
+                'store': False,
                 'data': block.serialize()
             }
             value_encoded = json.dumps(value)
             print(value_encoded)
-            #self.dht.storage(None, None, None, value_encoded)
+
+            # Notify everyone that I just made a block
             self.dht.broadcast(key, value_encoded)
             time.sleep(30)
 
-            if(self.set_last_block(block)):
-                #self.tx_perform(block)
+            # Request some people to permanantly store it
+            value['store'] = True
+            value_encoded = json.dumps(value)
+            self.dht.set(key, value_encoded)
+
+            # This will try to set the block as a new block as if
+            # someone sent the block => will try finding this block
+            # on network and update self only when network has agreed 
+            # on this block as the next
+            if(self.chain_update(block)):
+                self.chain_append(block)
                 open('transactions.txt', 'w').close()
             return block
 

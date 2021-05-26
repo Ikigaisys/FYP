@@ -44,12 +44,12 @@ class DHT:
                            node_id=bytes.fromhex(DHT.config['node']['id']),
                            broadcast_table=self.all_ips_hashtable)
         # asyncio.run(self.bootstrapper())
-        self.loop.create_task(self.node.listen(self.port, self.storage))
+        self.loop.create_task(self.node.listen(self.port, self.receive_callback))
 
         # Blockchain
         self.chain = Blockchain(self, Block(0, None))
 
-    def storage(self, sender, nodeid, key, value):
+    def receive_callback(self, sender, nodeid, key, value):
         data = json.loads(value)
 
 
@@ -60,7 +60,7 @@ class DHT:
             for ts in args['data']:
                 block.data.append(Transaction(ts['amount'], ts['fee'], ts['details']['category'], ts['details']['sender'], ts['details']['receiver'], ts['time'], ts['signature']))
 
-            if self.chain.accept_block(block):
+            if self.chain.accept_block(block, data['store'] or None):
                 return True
             return False
 
@@ -142,6 +142,16 @@ class DHT:
                 self.chain.dht.node.protocol.call_store(Node(digest(int(node_id, 16)), ip, int(port)), digest(_key), _value), 
                 self.loop)
 
+    def set(self, _key, _value):
+        asyncio.run_coroutine_threadsafe(self.node.set(_key, _value), self.loop)
+
+    def get(self, _key):
+        future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
+        try:
+            result = future.result(5)
+        except:
+            return None
+        return result
 
     def run(self):
         server_thread = threading.Thread(target=self.server)
