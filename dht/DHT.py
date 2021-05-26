@@ -1,8 +1,7 @@
-import sys
 import threading
 import logging
 import asyncio
-import os
+import time
 import random
 from configparser import ConfigParser
 import json
@@ -75,8 +74,9 @@ class DHT:
         ports = map(int, DHT.config.get('test', 'port').split(','))
 
         send_nodes =  list(zip(addresses, ports))
-
-        # TODO SET/REQUEST LAST BLOCK OF BLOCKCHAIN
+        time.sleep(1)
+        asyncio.run_coroutine_threadsafe(
+        self.node.bootstrap(send_nodes), self.loop)
 
         while True:
             # block = chain.create_block()
@@ -97,8 +97,7 @@ class DHT:
                     self.node.bootstrap(send_nodes), self.loop)
                 asyncio.run_coroutine_threadsafe(self.node.set(
                     split_data[0], split_data[1]), self.loop)
-
-            el"""
+            """
             
             if data == 'create':
                 self.chain.create_block()

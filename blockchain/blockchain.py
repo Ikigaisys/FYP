@@ -166,11 +166,18 @@ class Blockchain:
     def find_block_network(self, id):
         key = id
         future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
-        result = future.result(5)
-        if(result is None):
+
+        try:
+            result = future.result()
+            if(result is None):
+                print("Weird none result, quitting")
+                return None
+        except:
+            print("No response received")
             return None
 
         data = json.loads(result)
+        print(data)
         if(data['type'] != 'block'):
             print("Oh no :( block lost, lolbye")
             return None
@@ -181,8 +188,12 @@ class Blockchain:
         for tx in data['data']:
             t = Transaction(tx['amount'], tx['fee'], tx['category'], tx['sender'], tx['receiver'], tx['time'])
             t.signature = tx['signature']
+            if not tx.validate() or not tx.verify():
+                print('The block has invalid transaction..')
+                return False
             block.data.append(t)
 
+        print(block.data)
         if not block.validate_proof():
             print("INVALID BLOCK HACKING ATTEMPTS REEEEEEEEEEEEEEEEEEEE")
             return None
