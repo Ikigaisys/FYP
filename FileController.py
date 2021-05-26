@@ -12,7 +12,7 @@ class FileHashTable:
                     key, value = line.split(',')
                     value = value.replace("\n", "")
                     try:
-                        self.dict[key] = int(value)
+                        self.dict[key] = float(value)
                     except:
                         self.dict[key] = value
 

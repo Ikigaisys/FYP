@@ -57,13 +57,15 @@ class Domain:
 
 class Transaction:
 
-    def __init__(self, amount, fee, category, sender, receiver, time = None):
+    def __init__(self, amount, fee, category, sender, receiver, time = None, signature = None):
         self.amount = amount
         self.fee = fee
         if time == None:
             self.time = int(datetime.now().timestamp() / 1000)
+        else:
+            self.time = time
         self.details = { 'category': category, 'sender': sender, 'receiver': receiver }
-        self.signature = None
+        self.signature = signature
 
     def validate(self):
         # Check if the sender can send the money
@@ -132,10 +134,10 @@ class Block:
 
     def validate_proof(self):
         block_hash = self.hash()
-        return block_hash[:4] == "0000"
+        return block_hash[:3] == "000"
 
     def hash(self):
-        encoded_block = f'{self.__dict__}'.encode()
+        encoded_block = f'{todict(self)}'.encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
     def demo_create(self):
@@ -169,7 +171,7 @@ class Blockchain:
         future = asyncio.run_coroutine_threadsafe(self.dht.node.get(key), self.dht.loop)
 
         try:
-            result = future.result()
+            result = future.result(5)
             if(result is None):
                 print("Weird none result, quitting")
                 return None
@@ -212,12 +214,12 @@ class Blockchain:
             if not tx.validate() or not tx.verify():
                 return False
 
-            sender = tx.sender.replace('\n', '$$')
-            receiver = tx.receiver.replace('\n', '$$')
+            sender = tx.details['sender'].replace('\n', '$$')
+            receiver = tx.details['receiver'].replace('\n', '$$')
 
             # If transaction type is domain, money should be burnt
-            if tx.details.category == 'domain':
-                if tx.receiver == 0 and tx.amount == 1:
+            if tx.details['category'] == 'domain':
+                if tx.details['receiver'] == '0' and tx.amount == 1:
                     accounts[sender] -= tx.amount + tx.fee
                     accounts[miner] += tx.fee
                 else:
@@ -241,17 +243,16 @@ class Blockchain:
             # 3 attempts for finding new block
             found = False
             for i in range(3):
-                block = self.find_block_network(self.last_block.id + 1)
+                _block = self.find_block_network(self.last_block.id + 1)
                 # New block found, attempt to update my last block
-                print(block)
-                if block is not None:
-                    if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
-                        self.last_block = block
+                if _block is not None:
+                    if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash() and _block.validate_proof() and self.tx_perform(_block):
+                        self.last_block = _block
                         found = True
                         break
                 time.sleep(3)
             if not found:
-                return False
+                break
 
         if self.last_block.id == block.id:
 
@@ -277,9 +278,9 @@ class Blockchain:
         self.chain.append(block)
         with open('blockchain.txt', 'w') as file:
             file.write(str(self.is_miner) + '\n')
-            file.write(json.dumps(self.last_block.__dict__, sort_keys = True) + '\n')
+            file.write(json.dumps(todict(self.last_block), sort_keys = True) + '\n')
             for block in self.chain:
-                file.write(json.dumps(block.__dict__, sort_keys = True) + '\n')
+                file.write(json.dumps(todict(block), sort_keys = True) + '\n')
 
     # Try to accept a new incoming block
     def accept_block(self, block):
@@ -298,7 +299,7 @@ class Blockchain:
         if self.is_miner and os.stat('transactions.txt').st_size != 0:
             with open('transactions.txt', 'r') as file:
                 lines = file.readlines()
-                block = Block(self.last_block.id + 1, self.last_block.prev_hash, key_string[1])
+                block = Block(self.last_block.id + 1, self.last_block.hash(), key_string[1])
                 for line in lines:
                     if len(line.split(',')) < 5:
                         print('wut')
@@ -338,7 +339,7 @@ class Blockchain:
             print(value_encoded)
             #self.dht.storage(None, None, None, value_encoded)
             self.dht.broadcast(key, value_encoded)
-            time.sleep(3)
+            time.sleep(30)
 
             if(self.set_last_block(block)):
                 #self.tx_perform(block)

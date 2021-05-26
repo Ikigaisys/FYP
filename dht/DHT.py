@@ -7,7 +7,7 @@ from configparser import ConfigParser
 import json
 from .filestorage import FileStorage
 from kademlia.network import Server
-from blockchain.blockchain import Blockchain, Block
+from blockchain.blockchain import Transaction, Blockchain, Block
 from FileController import FileHashTable
 from kademlia.node import Node
 from kademlia.utils import digest
@@ -52,8 +52,14 @@ class DHT:
     def storage(self, sender, nodeid, key, value):
         data = json.loads(value)
 
+
         if data['type'] == 'block':
-            block = json.loads(data['data'], object_hook=lambda args: Block(**args))
+            args = json.loads(data['data']);
+            block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], [])
+
+            for ts in args['data']:
+                block.data.append(Transaction(ts['amount'], ts['fee'], ts['details']['category'], ts['details']['sender'], ts['details']['receiver'], ts['time'], ts['signature']))
+
             if self.chain.accept_block(block):
                 return True
             return False
