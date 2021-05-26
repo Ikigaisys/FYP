@@ -185,18 +185,15 @@ class Blockchain:
             print("Oh no :( block lost, lolbye")
             return None
         
-        data = data['data']
-        block = Block(data['id'], data['prev_hash'], data['miner'], data['timestamp'], data['nonce'], None)
-        block.data = list()
-        for tx in data['data']:
-            t = Transaction(tx['amount'], tx['fee'], tx['category'], tx['sender'], tx['receiver'], tx['time'])
-            t.signature = tx['signature']
-            if not tx.validate() or not tx.verify():
+        args = json.loads(data['data']);
+        block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], [])
+        for ts in args['data']:
+            ts = Transaction(ts['amount'], ts['fee'], ts['details']['category'], ts['details']['sender'], ts['details']['receiver'], ts['time'], ts['signature'])
+            if not ts.validate() or not ts.verify():
                 print('The block has invalid transaction..')
                 return False
-            block.data.append(t)
+            block.data.append(ts)
 
-        print(block.data)
         if not block.validate_proof():
             print("INVALID BLOCK HACKING ATTEMPTS REEEEEEEEEEEEEEEEEEEE")
             return None

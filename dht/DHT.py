@@ -88,9 +88,9 @@ class DHT:
             # block = chain.create_block()
 
             data = input()
-            split_data = data.split(',')
+            """split_data = data.split(',')
 
-            """if len(split_data) == 2:
+            if len(split_data) == 2:
                 for key, value in self.all_ips_hashtable.dict.items():
                     v = value.split(":")
                     from kademlia.utils import digest
