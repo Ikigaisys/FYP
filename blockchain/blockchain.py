@@ -238,19 +238,19 @@ class Blockchain:
         while self.last_block.id < block.id:
             # 3 attempts for finding new block
             found = False
-            for i in range(3):
-                _block = self.find_block_network(self.last_block.id + 1)
-                # New block found, attempt to update my last block
-                if _block is not None:
-                    if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash() and _block.validate_proof() and self.tx_perform(_block):
-                        self.last_block = _block
-                        found = True
-                        break
-                time.sleep(3)
-            
+            _block = self.find_block_network(self.last_block.id + 1)
+            # New block found, attempt to update my last block
+            if _block is not None:
+                if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash() and _block.validate_proof() and self.tx_perform(_block):
+                    self.last_block = _block
+                    found = True
+                    break
+        
             # Holes in my chain that I'm unable to fill
             if not found and self.last_block.id + 1 < block.id:
                 return False
+            elif not found and self.last_block.id + 1 == block.id:
+                break
 
         if self.last_block.id == block.id:
 
