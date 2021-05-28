@@ -359,27 +359,31 @@ class Blockchain:
             key = block.id
             value = {
                 'type': 'block',
-                'store': False,
+                'store': True,
                 'data': block.serialize()
             }
             value_encoded = json.dumps(value)
             print(value_encoded)
 
-            # Notify everyone that I just made a block
-            self.dht.broadcast(key, value_encoded)
-            time.sleep(30)
-
             # Request some people to permanantly store it
-            value['store'] = True
             value_encoded = json.dumps(value)
             self.dht.set(key, value_encoded)
+
+            time.sleep(30)
 
             # This will try to set the block as a new block as if
             # someone sent the block => will try finding this block
             # on network and update self only when network has agreed 
             # on this block as the next
             blk = self.find_block_network(block.id)
+#            print("HELLLO")
+#            print(blk.hash())
+#            print(block.hash())
+            exit;
             if(blk is not None and blk.hash() == block.hash()):
+            # Notify everyone that I just made a block
+                value['store'] = False
+                self.dht.broadcast(key, value_encoded)
                 self.tx_perform(block)
                 self.last_block = block
                 self.chain_append(block)
