@@ -28,6 +28,10 @@ class Key:
         pvt, pb = sig.key_to_string(self.private_key, self.public_key)
         return pvt.decode('utf-8'), pb.decode('utf-8')
 
+if not os.path.exists('config.ini'):
+    print('Please use templates/config_template.ini to create a config file.')
+    os.abort()
+
 config = ConfigParser()
 config.read('config.ini')
 if not config.has_section('keys') or not config.has_option('keys', 'public_key') or not config.has_option('keys', 'private_key'):
@@ -166,7 +170,7 @@ class Blockchain:
         self.dht = dht
         self.is_miner = is_miner
         self.last_block = last_block
-        if os.stat('blockchain.txt').st_size != 0:
+        if os.path.exists('blockchain.txt') and os.stat('blockchain.txt').st_size != 0:
             with open('blockchain.txt', 'r') as file:
                 lines = file.readlines()
                 i = 0
@@ -330,7 +334,7 @@ class Blockchain:
 
     # Create a new block
     def create_block(self):
-        if self.is_miner and os.stat('transactions.txt').st_size != 0:
+        if self.is_miner and os.path.exists('transactions.txt') and  os.stat('transactions.txt').st_size != 0:
             with open('transactions.txt', 'r') as file:
                 lines = file.readlines()
                 block = Block(self.last_block.id + 1, self.last_block.hash(), key_string[1])
@@ -374,17 +378,14 @@ class Blockchain:
             value_encoded = json.dumps(value)
             self.dht.set(key, value_encoded)
 
-            time.sleep(30)
+            time.sleep(10)
 
             # This will try to set the block as a new block as if
             # someone sent the block => will try finding this block
             # on network and update self only when network has agreed 
             # on this block as the next
             blk = self.find_block_network(block.id)
-#            print("HELLLO")
-#            print(blk.hash())
-#            print(block.hash())
-            exit;
+
             if(blk is not None and blk.hash() == block.hash()):
             # Notify everyone that I just made a block
                 value['store'] = False

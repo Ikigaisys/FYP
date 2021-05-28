@@ -3,8 +3,10 @@ import logging
 import asyncio
 import time
 import random
-from configparser import ConfigParser
+import shutil
 import json
+import os
+from configparser import ConfigParser
 from .filestorage import FileStorage
 from kademlia.network import Server
 from blockchain.blockchain import Transaction, Blockchain, Block
@@ -25,6 +27,7 @@ class DHT:
             config.write(configfile)
 
     def __init__(self, storage_file):
+
         # Logging
         self.handler = logging.StreamHandler()
         self.formatter = logging.Formatter(
@@ -34,7 +37,7 @@ class DHT:
         self.log.addHandler(self.handler)
         self.log.setLevel(logging.DEBUG)
         self.port = DHT.config.getint('server', 'port')
-        self.all_ips_hashtable = FileHashTable('all_ips.txt')
+        self.all_ips_hashtable = FileHashTable('network_nodes_list.txt')
 
         # Set loop
         self.loop = asyncio.get_event_loop()
@@ -104,8 +107,19 @@ class DHT:
                 self.chain.create_block()
 
             elif data == 'bootstrap':
-                asyncio.run_coroutine_threadsafe(
-                    self.node.bootstrap(send_nodes), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+
+            elif data == 'reset':
+                shutil.copyfile('templates\\accounts_o.txt', 'accounts.txt')
+                shutil.copyfile('templates\\blockchain_o.txt', 'blockchain.txt')
+                shutil.copyfile('templates\\kademlia_o.csv', 'kademlia.csv')
+                shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
+                open('network_nodes_list.txt', 'w').close()
+                self.chain = Blockchain(self, Block(0, None), DHT.config.getboolean('blockchain', 'miner'))
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+
+            elif data == 'reset_t':
+                shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
 
             """elif data == 'send':
                 asyncio.run_coroutine_threadsafe(
