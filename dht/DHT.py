@@ -55,10 +55,7 @@ class DHT:
 
         if data['type'] == 'block':
             args = json.loads(data['data']);
-            block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], [])
-
-            for ts in args['data']:
-                block.data.append(Transaction(ts['amount'], ts['fee'], ts['details']['category'], ts['details']['sender'], ts['details']['receiver'], ts['time'], ts['signature']))
+            block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
 
             if self.chain.accept_block(block, data['store'] or None):
                 return True

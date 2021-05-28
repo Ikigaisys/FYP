@@ -100,7 +100,16 @@ class Block:
         self.prev_hash = prev_hash
         self.nonce = nonce
         self.miner = miner
-        self.data = data
+        self.data = []
+        for tx_data in data:
+            if isinstance(tx_data, Transaction):
+                tx = tx_data
+            else:
+                tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'])
+            if not tx.validate() or not tx.verify():
+                print('The block has invalid transaction..')
+                return False
+            self.data.append(tx)
 
     def add_transaction(self, tx):
         self.data.append(tx)
@@ -162,16 +171,17 @@ class Blockchain:
                 lines = file.readlines()
                 i = 0
                 for line in lines:
+                    line = json.loads(line);
                     if i == 0:
-                        self.last_block = json.loads(line, object_hook=lambda args: Block(**args))
+                        self.last_block = Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data'])
                     else:
-                        self.chain.append(json.loads(line, object_hook=lambda args: Block(**args)))
+                        self.chain.append(Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data']))
                     i = i + 1
 
     # Find the block on the network
     def find_block_network(self, id):
         key = id
-
+ 
         result = self.dht.get(key)
         if result is None:
             print("Nothing received from network, no block")
@@ -184,13 +194,8 @@ class Blockchain:
             return None
         
         args = json.loads(data['data']);
-        block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], [])
-        for ts in args['data']:
-            ts = Transaction(ts['amount'], ts['fee'], ts['details']['category'], ts['details']['sender'], ts['details']['receiver'], ts['time'], ts['signature'])
-            if not ts.validate() or not ts.verify():
-                print('The block has invalid transaction..')
-                return False
-            block.data.append(ts)
+        block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
+
 
         if not block.validate_proof():
             print("INVALID BLOCK HACKING ATTEMPTS REEEEEEEEEEEEEEEEEEEE")
