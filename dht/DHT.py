@@ -86,6 +86,7 @@ class DHT:
             # block = chain.create_block()
 
             data = input()
+            split_data = data.split(' ')
             """split_data = data.split(',')
 
             if len(split_data) == 2:
@@ -120,6 +121,12 @@ class DHT:
 
             elif data == 'reset_t':
                 shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
+
+            elif len(split_data) >= 2 and split_data[0] == 'get':
+                if len(split_data) >= 3 and split_data[1] == 'domain':
+                    print("Not yet implemented") # Implement soon
+                else:
+                    print(self.get(split_data[1]))
 
             """elif data == 'send':
                 asyncio.run_coroutine_threadsafe(
