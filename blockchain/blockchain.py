@@ -279,7 +279,7 @@ class Blockchain:
         found = False
         for blk, i in enumerate(self.chain):
             if self.chain[blk].id == block.id:
-                self.chain[i] = block 
+                self.chain[blk] = block 
                 found = True
         if not found:
             self.chain.append(block)
