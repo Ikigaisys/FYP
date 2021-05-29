@@ -185,7 +185,9 @@ class Blockchain:
     # Find the block on the network
     def find_block_network(self, id):
         key = id
- 
+        print(key)
+        print(type(key))
+
         result = self.dht.get(key)
         if result is None:
             print("Nothing received from network, no block")
@@ -216,7 +218,7 @@ class Blockchain:
         miner = block.miner.replace('\n', '$$')
         if accounts[miner] is None:
             accounts[miner] = 0
-            
+
         for tx in txs:
             if not tx.validate() or not tx.verify():
                 return False
@@ -250,11 +252,13 @@ class Blockchain:
         while self.last_block.id < block.id:
             # 3 attempts for finding new block
             found = False
-            _block = self.find_block_network(self.last_block.id + 1)
+            _block = self.find_block_network(str(self.last_block.id + 1))
             # New block found, attempt to update my last block
+            print(_block)
             if _block is not None:
                 if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash() and _block.validate_proof() and self.tx_perform(_block):
                     self.last_block = _block
+                    self.chain_append(block, False)
                     found = True
                     break
         
