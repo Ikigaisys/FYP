@@ -104,16 +104,19 @@ class Block:
         self.prev_hash = prev_hash
         self.nonce = nonce
         self.miner = miner
-        self.data = []
-        for tx_data in data:
-            if isinstance(tx_data, Transaction):
-                tx = tx_data
-            else:
-                tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'])
-            if not tx.validate() or not tx.verify():
-                print('The block has invalid transaction..')
-                return False
-            self.data.append(tx)
+        if data == None:
+            self.data = None
+        else:
+            self.data = []
+            for tx_data in data:
+                if isinstance(tx_data, Transaction):
+                    tx = tx_data
+                else:
+                    tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'])
+                if not tx.validate() or not tx.verify():
+                    print('The block has invalid transaction..')
+                    return False
+                self.data.append(tx)
 
     def add_transaction(self, tx):
         self.data.append(tx)
@@ -155,8 +158,8 @@ class Block:
 
     def hash_stored(self):
         if hasattr(self, 'stored_hash'):
-            return stored_hash
-        return hash()
+            return self.stored_hash
+        return self.hash()
 
     def demo_create(self):
         self.miner = key_string[1]
@@ -178,15 +181,18 @@ class Blockchain:
                     line = json.loads(line);
                     if i == 0:
                         self.last_block = Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data'])
+                        if 'stored_hash' in line:
+                            self.last_block.stored_hash = line['stored_hash'] 
                     else:
-                        self.chain.append(Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data']))
+                        block = Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data'])
+                        if 'stored_hash' in line:
+                            block.stored_hash = line['stored_hash']
+                        self.chain.append(block)
                     i = i + 1
 
     # Find the block on the network
     def find_block_network(self, id):
-        key = id
-        print(key)
-        print(type(key))
+        key = str(id)
 
         result = self.dht.get(key)
         if result is None:
@@ -255,13 +261,13 @@ class Blockchain:
             for i in range(3):
                 _block = self.find_block_network(self.last_block.id + 1)
                 # New block found, attempt to update my last block
-                print(_block)
                 if _block is not None:
-                    if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash() and _block.validate_proof() and self.tx_perform(_block):
+                    if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash_stored() and _block.validate_proof() and self.tx_perform(_block):
                         self.last_block = _block
+                        self.chain_append(_block, False)
                         found = True
                         break
-                time.sleep(3)
+                time.sleep(1)
         
             # Holes in my chain that I'm unable to fill
             if not found and self.last_block.id + 1 < block.id:
@@ -271,17 +277,17 @@ class Blockchain:
 
         if self.last_block.id == block.id:
 
-            if self.last_block.hash() == block.hash():
+            if self.last_block.hash_stored() == block.hash():
                 return True
             else:
                 print("Network gave me a different last block, don't trust this new one")
                 return False
 
-        if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash() and block.validate_proof() and self.tx_perform(block):
+        if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash_stored() and block.validate_proof() and self.tx_perform(block):
             self.last_block = block
             return True
 
-        if self.last_block.id == block.id and self.last_block.hash() == block.hash():
+        if self.last_block.id == block.id and self.last_block.hash_stored() == block.hash():
             return True
 
         return False
@@ -290,6 +296,7 @@ class Blockchain:
     def chain_append(self, block, keep_data = True):
         # Strip data for mini-chain
         if not keep_data:
+            block.stored_hash = block.hash()
             block.data = None
 
         # Handle append in array/replacement in array
@@ -386,7 +393,7 @@ class Blockchain:
             value_encoded = json.dumps(value)
             self.dht.set(key, value_encoded)
 
-            time.sleep(10)
+            time.sleep(20)
 
             # This will try to set the block as a new block as if
             # someone sent the block => will try finding this block

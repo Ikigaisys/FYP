@@ -52,9 +52,8 @@ class DHT:
         # Blockchain
         self.chain = Blockchain(self, Block(0, None), DHT.config.getboolean('blockchain', 'miner'))
 
-    def receive_callback(self, sender, nodeid, key, value):
+    def callback_thread(self, sender, nodeid, key, value):
         data = json.loads(value)
-
 
         if data['type'] == 'block':
             args = json.loads(data['data']);
@@ -65,6 +64,13 @@ class DHT:
             return False
 
         return True
+
+    def receive_callback(self, sender, nodeid, key, value):
+        
+        cb_thread = threading.Thread(target=self.callback_thread, args=(sender, nodeid, key, value))
+
+        cb_thread.start()
+
 
     def server(self):
         try:
