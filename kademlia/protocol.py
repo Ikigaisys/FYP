@@ -41,8 +41,9 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
         self.welcome_if_new(source)
+        value_data = json.loads(value)
         log.debug("got a store request from %s, storing '%s'='%s'",
-                  sender, key.hex(), value)
+                  sender, key.hex(), ('BLOCK_' + str(value_data['data']['id'])) if value_data['type'] == 'block' else value )
         if self.callback(sender, nodeid, key, value) == True:
             self.storage[key] = value
         return True

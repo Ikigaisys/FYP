@@ -165,7 +165,8 @@ class Server:
             raise TypeError(
                 "Value must be of type int, float, bool, str, or bytes"
             )
-        log.info("setting '%s' = '%s' on network", key, value)
+        value_data = json.loads(value)
+        log.info("setting '%s' = '%s' on network", key, ('BLOCK_' + str(value_data['data']['id'])) if value_data['type'] == 'block' else value )
         dkey = digest(key)
         return await self.set_digest(dkey, value)
 
