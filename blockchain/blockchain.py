@@ -214,6 +214,9 @@ class Blockchain:
     def tx_perform(self, block):
         txs = block.get_transactions()
         miner = block.miner.replace('\n', '$$')
+        if accounts[miner] is None:
+            accounts[miner] = 0
+            
         for tx in txs:
             if not tx.validate() or not tx.verify():
                 return False
