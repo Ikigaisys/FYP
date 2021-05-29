@@ -24,5 +24,5 @@ class FileHashTable:
     def __setitem__(self, key, value):
         self.dict[key] = value
         with open(self.filename, 'w') as file:
-            for _key, _value in self.dict:
+            for _key, _value in self.dict.items():
                 file.write(_key + ',' + str(_value) + "\n")
