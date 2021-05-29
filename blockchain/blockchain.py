@@ -399,6 +399,7 @@ class Blockchain:
             # someone sent the block => will try finding this block
             # on network and update self only when network has agreed 
             # on this block as the next
+            
             blk = self.find_block_network(block.id)
 
             if(blk is not None and blk.hash() == block.hash()):
