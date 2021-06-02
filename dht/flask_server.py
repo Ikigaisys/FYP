@@ -46,16 +46,23 @@ def reset_t():
 @app.route('/get', methods=['GET', 'POST'])
 @cross_origin()
 def get():
-   # if request.args.get('key') is None:
-   #    return str("wth to get? stupid")
-
    if request.args.get('domain') is not None:
       domain = request.args.get('domain')
-      print(" bondu///////////////////////////////////////////////////////")
-      xml = '<?xml version="1.0" encoding="utf-8"?><domain><ip>172.25.48.135</ip></domain><!-- Not cached -->'
+      print("request " + request.args.get('domain'))
+      result = flask_variables.dht.chain.domain_find(request.args.get('domain'))
+      if result is None:
+         print("domain request failed")
+         ip = "0.0.0.0"
+      else:
+         ip = result[0]
+         port = result[1]
+      xml = '<?xml version="1.0" encoding="utf-8"?><domain><ip>' + ip + '</ip></domain><!-- Not cached -->'
       return Response(xml, mimetype="application/xml")
-   else:
+
+   elif request.args.get('key') is not None:
       return str(flask_variables.dht.get(request.args.get('key')))
+
+   return "Invalid get request"
 
 @app.route('/')
 def index():

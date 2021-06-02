@@ -2,13 +2,11 @@ import hashlib
 import json
 import os
 import time
-from flask import Flask, jsonify
 from datetime import datetime
-from json import JSONEncoder
 from .encryption import Signatures
 from FileController import FileHashTable
 from configparser import ConfigParser
-import asyncio
+from .dns_utils import *
 
 class Key:
 
@@ -91,6 +89,16 @@ class Transaction:
         # Check if the sender can send the money
         sender = self.details['sender'].replace('\n', '$$')
         if accounts[sender] is not None and accounts[sender] - self.fee - self.amount > 0:
+
+            # DNS?
+            if self.details['category'] == 'domain' and self.details['extra'] is not None:
+                dmn = Domain()
+                dmn.to_object(self.details['extra'])
+                if self.details['receiver'] == '0' and self.amount == 1 and domain_find(dmn.domain) is None:
+                    # retry just for safety
+                    time.sleep(1)
+                    if domain_find(dmn.domain) is None:
+                        return True
             return True
         return False
 
@@ -270,11 +278,8 @@ class Blockchain:
 
             # If transaction type is domain, money should be burnt
             if tx.details['category'] == 'domain':
-                if tx.details['receiver'] == '0' and tx.amount == 1:
-                    accounts[sender] -= tx.amount + tx.fee
-                    accounts[miner] += tx.fee
-                else:
-                    return False
+                accounts[sender] -= tx.amount + tx.fee
+                accounts[miner] += tx.fee
 
             else:
                 accounts[sender] -= tx.amount + tx.fee
@@ -457,24 +462,11 @@ class Blockchain:
                 self.last_block = block
                 self.chain_append(block)
                 open('transactions.txt', 'w').close()
-                self.domain_broadcast(block)
+
+                domain_broadcast(self.dht, block)
             else:
                 print("Discarding block, network did not accept")
 
-    # DNS Functions Start Here
-
-    def domain_broadcast(self, block):
-        for tx in block.data:
-            if tx.details['category'] == 'domain' and tx.details['extra'] != None:
-                domain = Domain()
-                domain.to_object(tx.details['extra'])
-                value = {
-                    'type': 'domain',
-                    'block': block.serialize(),
-                    'domain': tx.details['extra']
-                }
-                value_encoded = json.dumps(value)
-                self.dht.broadcast(domain.domain, value_encoded)
 
 def todict(obj, classkey=None):
     if isinstance(obj, dict):

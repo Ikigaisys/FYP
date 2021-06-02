@@ -1,3 +1,4 @@
+import configparser
 import threading
 import logging
 import asyncio
@@ -20,10 +21,20 @@ class DHT:
     config = ConfigParser()
     config.read('config.ini')
 
+    changes = None
     if not config.has_section('node'):
         config.add_section('node')
     if not config.has_option('node', 'id'):
         config['node']['id'] = digest(random.getrandbits(255)).hex()
+        changes = True
+
+    if not config.has_section('flask'):
+        config.add_section('flask')
+    if not config.has_option('flask', 'port'):
+        config['flask']['port'] = '5000'
+        changes = True
+
+    if changes is not None:
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
 
@@ -99,7 +110,7 @@ class DHT:
         asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
 
         flask_variables.set(self, send_nodes)
-        app.run()
+        app.run(port=DHT.config.getint('flask', 'port'))
 
         while True:
             # block = chain.create_block()
