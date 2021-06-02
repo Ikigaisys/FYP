@@ -1,0 +1,29 @@
+<script>
+    function printer(data) {
+        var pp = JSON.parse(data);
+        document.getElementById('console').innerHTML = pp.data;
+    }
+
+    function get (url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'json';
+        
+        xhr.onload = function () {
+            console.log(xhr);
+            var status = xhr.status;
+    
+            if (status == 200) {
+                callback(xhr.response);
+            } else {
+                callback("FAILURE " + status);
+            }
+        };
+    
+        xhr.send();
+    }
+</script>
+
+<button onclick="get('/reset', printer)">Reset</button>
+
+<p id="console"></p>
