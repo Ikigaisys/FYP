@@ -5,7 +5,8 @@ import time
 import random
 import shutil
 import json
-import os
+from .flask_server import app
+from .flask_server import flask_variables
 from configparser import ConfigParser
 from .filestorage import FileStorage
 from kademlia.network import Server
@@ -26,7 +27,7 @@ class DHT:
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
 
-    def __init__(self, storage_file):
+    def __init__(self):
 
         # Logging
         self.handler = logging.StreamHandler()
@@ -43,7 +44,7 @@ class DHT:
         self.loop = asyncio.get_event_loop()
         self.loop.set_debug(True)
 
-        self.node = Server(storage=FileStorage(storage_file), 
+        self.node = Server(storage=FileStorage('kademlia.csv'), 
                            node_id=bytes.fromhex(DHT.config['node']['id']),
                            broadcast_table=self.all_ips_hashtable)
         # asyncio.run(self.bootstrapper())
@@ -63,7 +64,16 @@ class DHT:
                 return True
             return False
 
-        return True
+        if data['type'] == 'domain':
+            bd = json.loads(data['block'])
+            domain = data['domain']
+            block = Block(bd['id'], bd['prev_hash'], bd['miner'], bd['timestamp'], bd['nonce'], bd['data'])
+            if self.chain.validate_block(block):
+                if block.find_transaction_by_extra(domain):
+                    return True
+            return False
+
+        return False # reject data insertion to DHT by default
 
     def receive_callback(self, sender, nodeid, key, value):
         
@@ -87,6 +97,9 @@ class DHT:
         send_nodes =  list(zip(addresses, ports))
         time.sleep(1)
         asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+
+        flask_variables.set(self, send_nodes)
+        app.run()
 
         while True:
             # block = chain.create_block()

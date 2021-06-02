@@ -55,20 +55,36 @@ accounts = FileHashTable('accounts.txt')
 class Domain:
 
     def __init__(self):
-        self.domain = ''
-        self.value = ''
+        self.domain = None
+        self.value = None
+        self.port = None
 
+    def to_object(self, extra):
+        if extra is None:
+            self.domain = None
+            self.value = None
+            self.port = None
+    
+            if len(extra.split(":")) == 3:
+                self.domain, self.value, self.port = extra.split(":")
+
+    def to_string(self):
+        return self.domain + ":" + self.value + ":" + self.port
 
 class Transaction:
 
-    def __init__(self, amount, fee, category, sender, receiver, time = None, signature = None):
+    def __init__(self, amount, fee, category, sender, receiver, time = None, signature = None, extra = None):
         self.amount = amount
         self.fee = fee
         if time == None:
             self.time = int(datetime.now().timestamp() / 1000)
         else:
             self.time = time
-        self.details = { 'category': category, 'sender': sender, 'receiver': receiver }
+        self.details =  {   'category': category, 
+                            'sender': sender, 
+                            'receiver': receiver, 
+                            'extra': extra 
+                        }
         self.signature = signature
 
     def validate(self):
@@ -112,10 +128,15 @@ class Block:
                 if isinstance(tx_data, Transaction):
                     tx = tx_data
                 else:
-                    tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'])
+                    if 'extra' not in tx_data:
+                        tx_data['extra'] = None
+
+                    tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'], tx_data['extra'])
+
                 if not tx.validate() or not tx.verify():
-                    print('The block has invalid transaction..')
+                    print('The block has an invalid transaction..')
                     return False
+
                 self.data.append(tx)
 
     def add_transaction(self, tx):
@@ -124,8 +145,11 @@ class Block:
     def get_transactions(self):
         return self.data
 
-    def find_transaction(self, key):
-        pass
+    def find_transaction_by_extra(self, extra):
+        for tx in self.data:
+            if tx.extra == extra:
+                return tx
+        return None
 
     def serialize(self):
         return json.dumps(todict(self), sort_keys=True)
@@ -215,6 +239,18 @@ class Blockchain:
         
         return block
         
+    def validate_block(self, block):
+        if block.id - 1 < 0:
+            return False
+        local_block = self.chain_find(block.id)
+        local_block_before = self.chain_find(block.id - 1)
+        if (local_block is not None and
+            local_block_before is not None and 
+            local_block_before.hash_stored() == block.prev_hash and 
+            local_block.hash_stored() == block.hash() and 
+            local_block.nonce == block.nonce):
+            return True
+        return False
 
     # Block received/created, update the account data for each person by
     # performing transactions
@@ -292,6 +328,13 @@ class Blockchain:
 
         return False
 
+    # Find from local chain
+    def chain_find(self, id):
+        for blk, i in enumerate(self.chain):
+            if self.chain[blk].id == id:
+                return self.chain[blk]
+        return None
+
     # Add the block to the chain
     def chain_append(self, block, keep_data = True):
         # Strip data for mini-chain
@@ -354,14 +397,16 @@ class Blockchain:
                 lines = file.readlines()
                 block = Block(self.last_block.id + 1, self.last_block.hash(), key_string[1])
                 for line in lines:
-                    if len(line.split(',')) < 5:
+                    if len(line.split(',')) < 6:
                         print('Invalid transaction split size')
                         continue
-                    amount, fee, category, sender, receiver, private_key = line.split(',')
+                    amount, fee, category, sender, receiver, private_key, extra = line.split(',')
                     sender = sender.replace('$$', '\n')
                     receiver = receiver.replace('$$', '\n')
+                    if extra == "None":
+                        extra = None
 
-                    tx = Transaction(float(amount), float(fee), category, sender, receiver)
+                    tx = Transaction(float(amount), float(fee), category, sender, receiver, extra)
                     sig = Signatures()
                     private_key, tmp = sig.string_to_key(private_key.replace('$$', '\n').encode(), None)
                     tx.sign(private_key)
@@ -376,6 +421,8 @@ class Blockchain:
             
             # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
             # UPDATE ID AND REPEAT PROCEDURE
+
+            # TODO: Verify domain not already exists on both creation/acceptance
             
             #block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
             #block.demo_create()
@@ -409,8 +456,24 @@ class Blockchain:
                 self.last_block = block
                 self.chain_append(block)
                 open('transactions.txt', 'w').close()
+                self.domain_broadcast(block)
             else:
                 print("Discarding block, network did not accept")
+
+    # DNS Functions Start Here
+
+    def domain_broadcast(self, block):
+        for tx in block.data:
+            if tx.details['category'] == 'domain' and tx.details['extra'] != None:
+                domain = Domain()
+                domain.to_object(tx.details['extra'])
+                value = {
+                    'type': 'domain',
+                    'block': block.serialize(),
+                    'domain': tx.details['extra']
+                }
+                value_encoded = json.dumps(value)
+                self.dht.broadcast(domain.domain, value_encoded)
 
 def todict(obj, classkey=None):
     if isinstance(obj, dict):
