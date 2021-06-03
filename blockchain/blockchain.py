@@ -393,13 +393,13 @@ class Blockchain:
 
         # Handle append in array/replacement in array
         tblock = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (chain, block.id))
-        block.data = json.dumps(todict(block.data), sort_keys = True)
+        blockstr = json.dumps(todict(block.data), sort_keys = True)
         if tblock is None:
             db.execute('insert into blocks (id, prev_hash, miner, timestamp, nonce, data, chain) values (?,?,?,?,?,?,?)',
-                (block.id, block.prev_hash, block.miner, block.timestamp, block.nonce, block.data, chain))
+                (block.id, block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain))
         else:
             db.execute('update blocks set prev_hash=?, miner=?, timestamp=?, nonce=?, data=?, chain=? where id=?',
-                (block.prev_hash, block.miner, block.timestamp, block.nonce, block.data, chain, block.id))
+                (block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain, block.id))
         
         """for blk, i in enumerate(self.chain):
             if self.chain[blk].id == block.id:
@@ -499,7 +499,7 @@ class Blockchain:
             value_encoded = json.dumps(value)
             self.dht.set(key, value_encoded)
 
-            time.sleep(60)
+            time.sleep(30)
 
             # This will try to set the block as a new block as if
             # someone sent the block => will try finding this block
