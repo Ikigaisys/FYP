@@ -121,7 +121,28 @@ def list_blockchains():
 @app.route('/add_transaction')
 def add_transaction():
    return render_template('add_transaction.html')
-   
+
+@app.route('/transaction_inserted', methods=['GET', 'POST'])
+def transaction_inserted():
+   id = request.form['receiver_id']
+   category = request.form['category']
+   amount = request.form['amount']
+   print(id)
+   print(category)
+   print(amount)
+   return render_template('add_transaction.html')
+
+@app.route('/register_domain')
+def register_domain():
+   return render_template('register_domain.html')   
+
+@app.route('/domain_registered', methods=['GET','POST'])
+def domain_registered():
+   domain = request.form['domain_name']
+   IP = request.form['IP']
+   print(domain + " " + IP)
+   return render_template('register_domain.html')
+
 @app.route('/submit_button')
 def submit_button():
    return render_template('index.html')

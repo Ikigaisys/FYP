@@ -1,0 +1,23 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">Register Domain</h1>
+    <br>
+    <form method="POST" action="domain_registered">
+        <div class="form-group">
+            <label for="domain_name" class="fs-6">Domain Name</label>
+            <input type="text" class="form-control" name="domain_name" id="domain_name" placeholder="domain_name">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="IP" class="fs-6">IP</label>
+            <input type="text" class="form-control" name="IP" id="IP" placeholder="ip">
+        </div>
+        <br>
+        <input type="submit" value="Register Domain" class="btn btn-primary">
+        </form>
+    {%endblock%}

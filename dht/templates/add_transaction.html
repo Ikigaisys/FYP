@@ -8,15 +8,15 @@
     {%block content%}
     <h1 class="display-4 text-white text_data">Add Transaction</h1>
     <br>
-    <form>
+    <form method="POST" action="transaction_inserted">
         <div class="form-group">
             <label for="receiver_pkey" class="fs-6">Receiver's Public Key</label>
-            <input type="text" class="form-control" id="receiver_pkey" placeholder="receiver's public key">
+            <input type="text" class="form-control" name="receiver_id" id="receiver_pkey" placeholder="receiver's public key">
         </div>
         <br>
         <div class="form-group">
             <label for="transaction_category" class="fs-6">Transaction Category</label>
-            <select class="form-control form-select col" id="transaction_category">
+            <select class="form-control form-select col" name='category' id="transaction_category">
                 <option value="domain">Domain</option>
                 <option value="send">Send</option>
             </select>
@@ -24,7 +24,8 @@
         <br>
         <div class="form-group">
             <label for="transaction_amount" class="fs-6">Transaction Amount</label>
-            <input type="number" class="form-control" id="transaction_amount" placeholder="transaction amount">
+            <input type="number" class="form-control" name="amount" id="transaction_amount" placeholder="transaction amount">
         </div>
-        </form>        
+        <input type="submit" value="Add Transaction" class="btn btn-primary">
+        </form>
     {%endblock%}
