@@ -1,0 +1,30 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+        option{background-color:#1A2035;}
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">Add Transaction</h1>
+    <br>
+    <form>
+        <div class="form-group">
+            <label for="receiver_pkey" class="fs-6">Receiver's Public Key</label>
+            <input type="text" class="form-control" id="receiver_pkey" placeholder="receiver's public key">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="transaction_category" class="fs-6">Transaction Category</label>
+            <select class="form-control form-select col" id="transaction_category">
+                <option value="domain">Domain</option>
+                <option value="send">Send</option>
+            </select>
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="transaction_amount" class="fs-6">Transaction Amount</label>
+            <input type="number" class="form-control" id="transaction_amount" placeholder="transaction amount">
+        </div>
+        </form>        
+    {%endblock%}

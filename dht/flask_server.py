@@ -118,6 +118,10 @@ def list_blockchains():
    ]
    return render_template('blockchain.html', blockchain = blockchain)
 
+@app.route('/add_transaction')
+def add_transaction():
+   return render_template('add_transaction.html')
+   
 @app.route('/submit_button')
 def submit_button():
    return render_template('index.html')
