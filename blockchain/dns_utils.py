@@ -14,8 +14,8 @@ def domain_broadcast(dht, block):
             value_encoded = json.dumps(value)
             dht.broadcast(domain.domain, value_encoded)
 
-def domain_find(domain):
-    value = self.dht.find(domain)
+def domain_find(blockchain, domain):
+    value = blockchain.dht.find(domain)
     if  (value is not None and value['type'] == 'domain'):
 
         block_id = value['block']
@@ -24,15 +24,15 @@ def domain_find(domain):
             1
 
         # Expired domain
-        if block_id + 100 > self.last_block.id:
+        if block_id + 100 > blockchain.last_blocks[blockchain.id].id:
             return None
 
-        block = self.chain_find(block_id)
+        block = blockchain.chain_find(block_id)
         if block is not None and block.data is not None:
-            return self.domain_find_in_tx(domain, block_id, block.data)
-        block = self.find_block_network(block_id)
+            return domain_find_in_tx(domain, block_id, block.data)
+        block = blockchain.find_block_network(block_id)
         if block is not None and block.data is not None:
-            return self.domain_find_in_tx(domain, block_id, block.data)
+            return domain_find_in_tx(domain, block_id, block.data)
 
     return None
 

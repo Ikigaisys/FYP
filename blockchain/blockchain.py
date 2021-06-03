@@ -94,7 +94,7 @@ class Transaction:
             if new == True and self.details['category'] == 'domain' and self.details['extra'] is not None:
                 dmn = Domain()
                 dmn.to_object(self.details['extra'])
-                dmn_block = domain_find(dmn.domain)
+                dmn_block = domain_find(self, dmn.domain)
                 if self.details['receiver'] == '0' and self.amount == 1 and dmn_block is None or dmn_block[0] == block_id:
                     # retry just for safety
                     if dmn_block == None:
