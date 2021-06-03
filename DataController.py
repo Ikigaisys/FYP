@@ -80,7 +80,7 @@ class SQLiteHashTable:
                 value = float(value)
             elif self.type == 'int':
                 value = int(value)
-            result.append(key,value)
+            result.append((key, value))
         cursor.close()
         return result
 
