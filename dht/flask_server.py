@@ -66,4 +66,58 @@ def get():
 
 @app.route('/')
 def index():
+   data = {
+      "node_id":"1234567890",
+      "public_key":"vqon1h0gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "private_key":"13hr0h1",
+      "server_port":"5678",
+      "chain_miner":"True",
+      "flask_port":"500"
+   }
+   return render_template('user_data.html', data = data)
+
+@app.route('/list_blockchains')
+def list_blockchains():
+   blockchain = [
+      {
+         'id':'9876543210',
+         'prev_hash':'hash not found',
+         'miner':'None',
+         'timestramp':'03/06/2021',
+         'nonce':'987789',
+         'data':[
+            {'amount':'1000',
+             'fee':'Rs.2', 
+             'category':'Islam',
+             'sender':'Ammar',
+             'receiver':'Hashir',
+             'time':'14/01/1999',
+             'signature':'xtz',
+             'extra':'Fraz'
+            }
+         ]
+      },
+      {
+         'id':'9876543210',
+         'prev_hash':'hash not found',
+         'miner':'None',
+         'timestramp':'03/06/2021',
+         'nonce':'987789',
+         'data':[
+            {'amount':'1000',
+             'fee':'Rs.2', 
+             'category':'Islam',
+             'sender':'Ammar',
+             'receiver':'Hashir',
+             'time':'14/01/1999',
+             'signature':'xtz',
+             'extra':'Fraz'
+            }
+         ]
+      }
+   ]
+   return render_template('blockchain.html', blockchain = blockchain)
+
+@app.route('/submit_button')
+def submit_button():
    return render_template('index.html')

@@ -1,0 +1,41 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+        .text_data{display: inline;}
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">Blockchain Data</h1>
+    <button class="btn btn-primary float-right">Create Block</button>
+    {% set index = 0 %}
+    {% for block in blockchain %}
+    <div class="card text-white mb-12">
+        <div class="card-header">Block ID: {{block["id"]}}</div>
+        <div class="card-body">
+          <h5 class="card-title">{{block["timestramp"]}}</h5>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-2 py-1">Miner: {{block["miner"]}}</li>
+            <li class="list-group-item px-2 py-1">Nonce Value: {{block["nonce"]}}</li>
+            <li class="list-group-item px-2 py-1">Previous Hash: {{block["prev_hash"]}}</li>            
+            <li  class="list-group-item px-2 py-1"><a data-bs-toggle="collapse" data-bs-target="#trans{{loop.index}}" aria-expanded="false" aria-controls="trans{{loop.index}}"><b><i class="fas fa-arrow-down fa-1x"></i>Transactions</b></a></li>
+                <div id="trans{{loop.index}}" class="collapse">
+                <h6 class="py-1 px-2">Transaction No. {{loop.index}}</h6>
+                {% for transaction in block.data %}
+                <ul class="list-group list-group-flush" >
+                    <li class="list-group-item px-6 py-1">Amount: {{transaction["amount"]}}</li>
+                    <li class="list-group-item px-6 py-1">Fee: {{transaction["fee"]}}</li>
+                    <li class="list-group-item px-6 py-1">Previous Hash: {{transaction["category"]}}</li>
+                    <li class="list-group-item px-6 py-1">Category: {{transaction["sender"]}}</li>
+                    <li class="list-group-item px-6 py-1">Amount: {{transaction["receiver"]}}</li>
+                    <li class="list-group-item px-6 py-1">Fee: {{transaction["time"]}}</li>
+                    <li class="list-group-item px-6 py-1">Previous Hash: {{transaction["signature"]}}</li>
+                    <li class="list-group-item px-6 py-1">Category: {{transaction["extra"]}}</li>
+                </ul>
+                {% endfor %}
+                </div>
+          </ul>
+        </div>
+    </div>
+    {% endfor %}
+    {%endblock%}
