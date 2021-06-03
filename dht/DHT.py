@@ -12,7 +12,7 @@ from configparser import ConfigParser
 from .filestorage import FileStorage
 from kademlia.network import Server
 from blockchain.blockchain import Transaction, Blockchain, Block
-from FileController import FileHashTable
+from DataController import SQLiteHashTable
 from kademlia.node import Node
 from kademlia.utils import digest
 
@@ -49,7 +49,7 @@ class DHT:
         self.log.addHandler(self.handler)
         self.log.setLevel(logging.DEBUG)
         self.port = DHT.config.getint('server', 'port')
-        self.all_ips_hashtable = FileHashTable('network_nodes_list.txt')
+        self.all_ips_hashtable = SQLiteHashTable('network_nodes_list')
 
         # Set loop
         self.loop = asyncio.get_event_loop()
@@ -62,7 +62,7 @@ class DHT:
         self.loop.create_task(self.node.listen(self.port, self.receive_callback))
 
         # Blockchain
-        self.chain = Blockchain(self, Block(0, None), DHT.config.getboolean('blockchain', 'miner'))
+        self.chain = Blockchain(self, DHT.config.getboolean('blockchain', 'miner'))
 
     def callback_thread(self, sender, nodeid, key, value):
         data = json.loads(value)

@@ -29,19 +29,19 @@ def domain_find(self, domain):
 
         block = self.chain_find(block_id)
         if block is not None and block.data is not None:
-            return self.domain_find_in_tx(domain, block.data)
+            return self.domain_find_in_tx(domain, block_id, block.data)
         block = self.find_block_network(block_id)
         if block is not None and block.data is not None:
-            return self.domain_find_in_tx(domain, block.data)
+            return self.domain_find_in_tx(domain, block_id, block.data)
 
     return None
 
-def domain_find_in_tx(domain, txs):
+def domain_find_in_tx(domain, block_id, txs):
     for tx in txs:
         if tx.details['category'] == 'domain' and tx.details['extra'] is not None:
             from .blockchain import Domain
             dmn = Domain()
             dmn.to_object(tx.details['extra'])
             if dmn.domain == domain:
-                return [dmn.value, dmn.port]
+                return [block_id, dmn.value, dmn.port]
     return None

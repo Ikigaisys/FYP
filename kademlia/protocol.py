@@ -1,7 +1,7 @@
 import random
 import asyncio
 import logging
-
+import json
 from rpcudp.protocol import RPCProtocol
 
 from kademlia.node import Node
@@ -41,9 +41,14 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
         self.welcome_if_new(source)
-        value_data = json.loads(value)
+        try:
+            value_data = json.loads(value)
+            if value_data['type'] == 'block':
+                value = 'BLOCK_' + str(value_data['data']['id'])
+        except:
+            1
         log.debug("got a store request from %s, storing '%s'='%s'",
-                  sender, key.hex(), ('BLOCK_' + str(value_data['data']['id'])) if value_data['type'] == 'block' else value )
+                sender, key.hex(), value)
         if self.callback(sender, nodeid, key, value) == True:
             self.storage[key] = value
         return True

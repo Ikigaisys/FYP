@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime
 from .encryption import Signatures
-from FileController import FileHashTable
+from DataController import SQLiteHashTable, db
 from configparser import ConfigParser
 from .dns_utils import *
 
@@ -48,7 +48,7 @@ if config.has_section('keys') and config.has_option('keys', 'public_key') and co
     key = Key(k1, k2)
     key_string = key.to_string()
 
-accounts = FileHashTable('accounts.txt')
+accounts = SQLiteHashTable('accounts', 'float')
         
 class Domain:
 
@@ -85,19 +85,22 @@ class Transaction:
                         }
         self.signature = signature
 
-    def validate(self):
+    def validate(self, new = False, block_id = None):
         # Check if the sender can send the money
         sender = self.details['sender'].replace('\n', '$$')
         if accounts[sender] is not None and accounts[sender] - self.fee - self.amount > 0:
 
             # DNS?
-            if self.details['category'] == 'domain' and self.details['extra'] is not None:
+            if new == True and self.details['category'] == 'domain' and self.details['extra'] is not None:
                 dmn = Domain()
                 dmn.to_object(self.details['extra'])
-                if self.details['receiver'] == '0' and self.amount == 1 and domain_find(dmn.domain) is None:
+                dmn_block = domain_find(dmn.domain)
+                if self.details['receiver'] == '0' and self.amount == 1 and dmn_block is None or dmn_block[0] == block_id:
                     # retry just for safety
-                    time.sleep(1)
-                    if domain_find(dmn.domain) is None:
+                    if dmn_block == None:
+                        time.sleep(1)
+                        dmn_block = domain_find(dmn.domain)
+                    if dmn_block is None or dmn_block[0] == block_id:
                         return True
             return True
         return False
@@ -200,12 +203,40 @@ class Block:
 
 class Blockchain:
 
-    def __init__(self, dht, last_block = None, is_miner = True):
-        self.chain = []
+    def __init__(self, dht, is_miner = True):
+        self.chains = {}
         self.dht = dht
         self.is_miner = is_miner
-        self.last_block = last_block
-        if os.path.exists('blockchain.txt') and os.stat('blockchain.txt').st_size != 0:
+        self.last_blocks = {}
+        self.fork_locations = {}
+        self.id = None
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS blockchain 
+            (id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fork_location INTEGER, last_block INTEGER)
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS blocks 
+            (id INTEGER, prev_hash CHAR(64), miner CHAR(460),
+            timestamp INTEGER, nonce INTEGER, data TEXT,
+            chain INTEGER, PRIMARY KEY (id, chain))
+        """)
+        cur = db.con.cursor()
+        cur.execute("SELECT id, last_block, fork_location from blockchain")
+        for blockchain in cur:
+            self.chains[blockchain['id']] = blockchain['id']
+            if self.id == None or blockchain['last_block'] > self.last_blocks[self.id].id:
+                self.id = blockchain['id']
+            self.fork_locations[blockchain['id']] = blockchain['fork_location']            
+            block = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (self.id, blockchain['last_block']))
+            if block is not None:
+                self.last_blocks[blockchain['id']] = Block(block['id'], block['prev_hash'], block['miner'], block['timestamp'], block['nonce'], json.loads(block['data']))
+        cur.close()
+        if len(self.chains) == 0:
+            self.id = db.execute('insert into blockchain (last_block, fork_location) values (?,?)', (0,0))
+            self.chain_append(Block(0, 0, timestamp=0))
+
+            """if os.path.exists('blockchain.txt') and os.stat('blockchain.txt').st_size != 0:
             with open('blockchain.txt', 'r') as file:
                 lines = file.readlines()
                 i = 0
@@ -221,6 +252,7 @@ class Blockchain:
                             block.stored_hash = line['stored_hash']
                         self.chain.append(block)
                     i = i + 1
+            """
 
     # Find the block on the network
     def find_block_network(self, id):
@@ -263,14 +295,14 @@ class Blockchain:
     # Block received/created, update the account data for each person by
     # performing transactions
     # TODO: Rollback when a transaction is invalid...
-    def tx_perform(self, block):
+    def tx_perform(self, block, new = False):
         txs = block.get_transactions()
         miner = block.miner.replace('\n', '$$')
         if accounts[miner] is None:
             accounts[miner] = 0
 
         for tx in txs:
-            if not tx.validate() or not tx.verify():
+            if not tx.validate(new, block.id) or not tx.verify():
                 return False
 
             sender = tx.details['sender'].replace('\n', '$$')
@@ -293,63 +325,83 @@ class Blockchain:
 
     # Update the chain by performing missing/new transactions
     # Update last_block attribute
-    def chain_update(self, block):
-        # The block sent to me isnt the next block, eg: im at #3 and i get sent #6,
+    def chain_update(self, block, keep_data = True):
+        # The block sent to me isn't the next block, eg: im at #3 and i get sent #6,
         # holes in-between 
-        while self.last_block.id < block.id:
+        while self.last_block[self.id].id < block.id:
             # 3 attempts for finding new block
             found = False
             for i in range(3):
-                _block = self.find_block_network(self.last_block.id + 1)
+                _block = self.find_block_network(self.last_blocks[self.id].id + 1)
                 # New block found, attempt to update my last block
                 if _block is not None:
-                    if self.last_block.id + 1 == _block.id and _block.prev_hash == self.last_block.hash_stored() and _block.validate_proof() and self.tx_perform(_block):
-                        self.last_block = _block
+                    if self.last_blocks[self.id].id + 1 == _block.id and _block.prev_hash == self.last_blocks[self.id].hash_stored() and _block.validate_proof() and self.tx_perform(_block, True):
+                        #self.last_block = _block
                         self.chain_append(_block, False)
                         found = True
                         break
                 time.sleep(1)
         
             # Holes in my chain that I'm unable to fill
-            if not found and self.last_block.id + 1 < block.id:
+            if not found and self.last_blocks[self.id].id + 1 < block.id:
                 return False
-            elif not found and self.last_block.id + 1 == block.id:
+            elif not found and self.last_blocks[self.id].id + 1 == block.id:
                 break
 
-        if self.last_block.id == block.id:
+        if self.last_blocks[self.id].id == block.id:
 
-            if self.last_block.hash_stored() == block.hash():
+            if self.last_blocks[self.id].hash_stored() == block.hash():
+                self.chain_append(block, keep_data)
                 return True
             else:
                 print("Network gave me a different last block, don't trust this new one")
+                print("TODO: Fork and save both")
                 return False
 
-        if self.last_block.id + 1 == block.id and block.prev_hash == self.last_block.hash_stored() and block.validate_proof() and self.tx_perform(block):
-            self.last_block = block
-            return True
-
-        if self.last_block.id == block.id and self.last_block.hash_stored() == block.hash():
+        if self.last_blocks[self.id].id + 1 == block.id and block.prev_hash == self.last_blocks[self.id].hash_stored() and block.validate_proof() and self.tx_perform(block, True):
+            #self.last_block = block
+            self.chain_append(block, keep_data)
             return True
 
         return False
 
     # Find from local chain
-    def chain_find(self, id):
-        for blk, i in enumerate(self.chain):
+    def chain_find(self, id, chain = None):
+        if chain is None:
+            chain = self.id
+        block = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (chain, id))
+        if block is not None:
+            return Block(block['id'], block['prev_hash'], block['miner'], block['timestamp'], block['nonce'], json.loads(block['data']))
+        """for blk, i in enumerate(self.chain):
             if self.chain[blk].id == id:
-                return self.chain[blk]
+                return self.chain[blk]"""
         return None
 
     # Add the block to the chain
-    def chain_append(self, block, keep_data = True):
+    def chain_append(self, block, keep_data = True, chain = None):
+        if chain is None:
+            chain = self.id
+
+        if chain not in self.last_blocks or self.last_blocks[chain].id < block.id:
+            self.last_blocks[chain] = block
+            db.execute("update blockchain set last_block = ? where id = ?", (block.id, chain))
+
         # Strip data for mini-chain
         if not keep_data:
             block.stored_hash = block.hash()
             block.data = None
 
         # Handle append in array/replacement in array
-        found = False
-        for blk, i in enumerate(self.chain):
+        tblock = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (chain, block.id))
+        block.data = json.dumps(todict(block.data), sort_keys = True)
+        if tblock is None:
+            db.execute('insert into blocks (id, prev_hash, miner, timestamp, nonce, data, chain) values (?,?,?,?,?,?,?)',
+                (block.id, block.prev_hash, block.miner, block.timestamp, block.nonce, block.data, chain))
+        else:
+            db.execute('update blocks set prev_hash=?, miner=?, timestamp=?, nonce=?, data=?, chain=? where id=?',
+                (block.prev_hash, block.miner, block.timestamp, block.nonce, block.data, chain, block.id))
+        
+        """for blk, i in enumerate(self.chain):
             if self.chain[blk].id == block.id:
                 self.chain[blk] = block 
                 found = True
@@ -359,25 +411,18 @@ class Blockchain:
         with open('blockchain.txt', 'w') as file:
             file.write(json.dumps(todict(self.last_block), sort_keys = True) + '\n')
             for block in self.chain:
-                file.write(json.dumps(todict(block), sort_keys = True) + '\n')
+                file.write(json.dumps(todict(block), sort_keys = True) + '\n')"""
 
     # Try to accept a new incoming block
     def accept_block(self, block, keep_data = True):
         # Handle a newly created block
         if self.chain_update(block):
-            self.chain_append(block, keep_data)
             return True
 
         # Handle older blocks (Don't perform transactions again, just store)
-        if self.last_block.id > block.id:
-            find_block = None
-            find_prev_block = None
-            # Find in mini-chain
-            for blk in self.chain:
-                if blk.id == block.id:
-                    find_block = blk
-                if blk.id == block.id - 1:
-                    find_prev_block = blk
+        if self.last_blocks[self.id].id > block.id:
+            find_block = self.chain_find(block.id)
+            find_prev_block = self.chain_find(block.id - 1)
 
             # Is it valid?
             if (find_block is not None and find_prev_block is not None and 
@@ -392,42 +437,51 @@ class Blockchain:
                 self.chain_append(block, keep_data)
                 return True
             else:
-                print("Block store request ignored...")
+                print("Block store request ignored, a mini version does not exist of this/previous block...")
         return False
 
     # Create a new block
     def create_block(self):
-        if self.is_miner and os.path.exists('transactions.txt') and  os.stat('transactions.txt').st_size != 0:
-            with open('transactions.txt', 'r') as file:
-                lines = file.readlines()
-                block = Block(self.last_block.id + 1, self.last_block.hash(), key_string[1])
-                for line in lines:
-                    if len(line.split(',')) < 6:
-                        print('Invalid transaction split size')
-                        continue
-                    amount, fee, category, sender, receiver, private_key, extra = line.split(',')
-                    sender = sender.replace('$$', '\n')
-                    receiver = receiver.replace('$$', '\n')
-                    if extra == "None":
-                        extra = None
+        if self.is_miner:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS transactions 
+                (sender CHAR(460), receiver CHAR(460),
+                private_key CHAR(1732), signature TEXT,
+                extra TEXT, amount REAL, fee REAL,
+                category CHAR(16))
+            """)
+            block = Block(self.last_blocks[self.id].id + 1, self.last_blocks[self.id].hash(), key_string[1])
+            cur = db.con.cursor()
+            cur.execute("SELECT * from transactions")
+            for trans in cur:
+                sender = trans['sender'].replace('$$', '\n')
+                receiver = trans['receiver'].replace('$$', '\n')
+                extra = None
+                if trans['extra'] == "None":
+                    extra = trans['extra']
 
-                    tx = Transaction(float(amount), float(fee), category, sender, receiver, extra)
+                tx = Transaction(float(trans['amount']), float(trans['fee']), trans['category'], sender, receiver, extra)
+                if trans['private_key'] is not None:
                     sig = Signatures()
-                    private_key, tmp = sig.string_to_key(private_key.replace('$$', '\n').encode(), None)
+                    private_key, tmp = sig.string_to_key(trans['private_key'].replace('$$', '\n').encode(), None)
                     tx.sign(private_key)
+                else:
+                    tx.signature = json.loads(trans['signature'])
 
-                    if tx.validate() and tx.verify():
-                        block.add_transaction(tx)
-                    else:
-                        print("Invalid transaction detected, skipping!")
+                if tx.validate(True, self.last_blocks[self.id].id + 1) and tx.verify():
+                    block.add_transaction(tx)
+                else:
+                    print("Invalid transaction detected, skipping!")
+            cur.close()
+
+            if len(block.data) == 0:
+                return
 
             block.miner = key_string[1]
             block.nonce = block.proof_of_work()
             
             # TODO: IF NONCE WAS FOUND AFTER A NEW BLOCK WAS RECEIVED,
             # UPDATE ID AND REPEAT PROCEDURE
-
-            # TODO: Verify domain not already exists on both creation/acceptance
             
             #block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
             #block.demo_create()
@@ -461,9 +515,9 @@ class Blockchain:
                 self.tx_perform(block)
                 self.last_block = block
                 self.chain_append(block)
-                open('transactions.txt', 'w').close()
-
                 domain_broadcast(self.dht, block)
+                for tx in block.data:
+                    db.execute('delete from transactions where sender=? and receiver=? and amount=? and fee=?', (tx.sender, tx.receiver, tx.amount, tx.fee))
             else:
                 print("Discarding block, network did not accept")
 
