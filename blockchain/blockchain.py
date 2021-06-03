@@ -457,10 +457,10 @@ class Blockchain:
                 sender = trans['sender'].replace('$$', '\n')
                 receiver = trans['receiver'].replace('$$', '\n')
                 extra = None
-                if trans['extra'] == "None":
+                if trans['extra'] is not None:
                     extra = trans['extra']
 
-                tx = Transaction(float(trans['amount']), float(trans['fee']), trans['category'], sender, receiver, extra)
+                tx = Transaction(float(trans['amount']), float(trans['fee']), trans['category'], sender, receiver, extra=extra)
                 if trans['private_key'] is not None:
                     sig = Signatures()
                     private_key, tmp = sig.string_to_key(trans['private_key'].replace('$$', '\n').encode(), None)
@@ -517,7 +517,7 @@ class Blockchain:
                 self.chain_append(block)
                 domain_broadcast(self.dht, block)
                 for tx in block.data:
-                    db.execute('delete from transactions where sender=? and receiver=? and amount=? and fee=?', (tx.sender, tx.receiver, tx.amount, tx.fee))
+                    db.execute('delete from transactions where sender=? and receiver=? and amount=? and fee=?', (tx.details['sender'], tx.details['receiver'], tx.amount, tx.fee))
             else:
                 print("Discarding block, network did not accept")
 

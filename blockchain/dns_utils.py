@@ -14,7 +14,7 @@ def domain_broadcast(dht, block):
             value_encoded = json.dumps(value)
             dht.broadcast(domain.domain, value_encoded)
 
-def domain_find(self, domain):
+def domain_find(domain):
     value = self.dht.find(domain)
     if  (value is not None and value['type'] == 'domain'):
 
