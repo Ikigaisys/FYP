@@ -15,7 +15,7 @@ def domain_broadcast(dht, block):
             dht.broadcast(domain.domain, value_encoded)
 
 def domain_find(blockchain, domain):
-    value = blockchain.dht.find(domain)
+    value = blockchain.dht.get(domain)
     if  (value is not None and value['type'] == 'domain'):
 
         block_id = value['block']

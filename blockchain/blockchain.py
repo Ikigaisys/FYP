@@ -85,7 +85,7 @@ class Transaction:
                         }
         self.signature = signature
 
-    def validate(self, new = False, block_id = None):
+    def validate(self, blockchain, new = False, block_id = None):
         # Check if the sender can send the money
         sender = self.details['sender'].replace('\n', '$$')
         if accounts[sender] is not None and accounts[sender] - self.fee - self.amount > 0:
@@ -94,12 +94,12 @@ class Transaction:
             if new == True and self.details['category'] == 'domain' and self.details['extra'] is not None:
                 dmn = Domain()
                 dmn.to_object(self.details['extra'])
-                dmn_block = domain_find(self, dmn.domain)
+                dmn_block = domain_find(blockchain, dmn.domain)
                 if self.details['receiver'] == '0' and self.amount == 1 and dmn_block is None or dmn_block[0] == block_id:
                     # retry just for safety
                     if dmn_block == None:
                         time.sleep(1)
-                        dmn_block = domain_find(dmn.domain)
+                        dmn_block = domain_find(blockchain, dmn.domain)
                     if dmn_block is None or dmn_block[0] == block_id:
                         return True
             return True
@@ -144,7 +144,7 @@ class Block:
 
                     tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'], tx_data['extra'])
 
-                if not tx.validate() or not tx.verify():
+                if not tx.validate(self) or not tx.verify():
                     print('The block has an invalid transaction..')
                     return False
 
@@ -302,7 +302,7 @@ class Blockchain:
             accounts[miner] = 0
 
         for tx in txs:
-            if not tx.validate(new, block.id) or not tx.verify():
+            if not tx.validate(self, new, block.id) or not tx.verify():
                 return False
 
             sender = tx.details['sender'].replace('\n', '$$')
@@ -431,7 +431,7 @@ class Blockchain:
                 block.validate_proof()):
 
                 for ts in block.data:
-                    if not ts.validate() or not ts.verify():
+                    if not ts.validate(self) or not ts.verify():
                         print('The old block has an invalid transaction..')
 
                 self.chain_append(block, keep_data)
@@ -468,7 +468,7 @@ class Blockchain:
                 else:
                     tx.signature = json.loads(trans['signature'])
 
-                if tx.validate(True, self.last_blocks[self.id].id + 1) and tx.verify():
+                if tx.validate(self, True, self.last_blocks[self.id].id + 1) and tx.verify():
                     block.add_transaction(tx)
                 else:
                     print("Invalid transaction detected, skipping!")
