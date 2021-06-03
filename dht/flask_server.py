@@ -86,18 +86,23 @@ def get():
 @app.route('/')
 def index():
    data = {
-      "node_id":"1234567890",
-      "public_key":"vqon1h0gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "private_key":"13hr0h1",
-      "server_port":"5678",
-      "chain_miner":"True",
-      "flask_port":"500"
+      "node_id": config.get('node', 'id'),
+      "public_key": config.get('keys', 'public_key').replace('$$', '\n'),
+      "private_key": config.get('keys', 'private_key').replace('$$', '\n'),
+      "server_port": config.get('server', 'port'),
+      "chain_miner": config.get('blockchain', 'miner'),
+      "flask_port": config.get('flask', 'port')
    }
    return render_template('user_data.html', data = data)
 
 @app.route('/list_blockchains')
 def list_blockchains():
-   blockchain = [
+   lb = flask_variables.dht.chain.last_blocks[flask_variables.dht.chain.id]
+   blockchain = []
+   blockchain.append(flask_variables.dht.chain.chain_find(0))
+   for i in range(lb.id):
+      blockchain.append(flask_variables.dht.chain.chain_find(i))
+   """   blockchain = [
       {
          'id':'9876543210',
          'prev_hash':'hash not found',
@@ -134,7 +139,7 @@ def list_blockchains():
             }
          ]
       }
-   ]
+   ]"""
    return render_template('blockchain.html', blockchain = blockchain)
 
 @app.route('/add_transaction')

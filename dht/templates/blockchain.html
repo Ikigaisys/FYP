@@ -11,14 +11,15 @@
     {% set index = 0 %}
     {% for block in blockchain %}
     <div class="card text-white mb-12">
-        <div class="card-header">Block ID: {{block["id"]}}</div>
+        <div class="card-header pb-0">Block ID: {{block["id"]}}</div>
         <div class="card-body">
-          <h5 class="card-title">{{block["timestramp"]}}</h5>
+          <!--h5 class="card-title">{{block["timestamp"]}}</h5-->
           <ul class="list-group list-group-flush">
+            <li class="list-group-item px-2 py-1">Timestamp: {{block["timestamp"]}}</li>
             <li class="list-group-item px-2 py-1">Miner: {{block["miner"]}}</li>
             <li class="list-group-item px-2 py-1">Nonce Value: {{block["nonce"]}}</li>
             <li class="list-group-item px-2 py-1">Previous Hash: {{block["prev_hash"]}}</li>            
-            <li  class="list-group-item px-2 py-1"><a data-bs-toggle="collapse" data-bs-target="#trans{{loop.index}}" aria-expanded="false" aria-controls="trans{{loop.index}}"><b><i class="fas fa-arrow-down fa-1x"></i>Transactions</b></a></li>
+            <li  class="list-group-item px-2 py-1"><a data-bs-toggle="collapse" data-bs-target="#trans{{loop.index}}" aria-expanded="false" aria-controls="trans{{loop.index}}"><b><i class="fas fa-arrow-down fa-1x"></i> Transactions</b></a></li>
                 <div id="trans{{loop.index}}" class="collapse">
                 <h6 class="py-1 px-2">Transaction No. {{loop.index}}</h6>
                 {% for transaction in block.data %}
