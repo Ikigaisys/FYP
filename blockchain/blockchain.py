@@ -499,7 +499,7 @@ class Blockchain:
             value_encoded = json.dumps(value)
             self.dht.set(key, value_encoded)
 
-            time.sleep(20)
+            time.sleep(60)
 
             # This will try to set the block as a new block as if
             # someone sent the block => will try finding this block

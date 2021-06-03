@@ -3,7 +3,8 @@ function printer(id, data) {
     document.getElementById(id).innerHTML = pp.data;
 }
 
-function get (url, callback, param) {
+function get (url, event, callback, param) {
+    event.preventDefault();
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.responseType = 'json';

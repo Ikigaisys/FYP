@@ -7,7 +7,7 @@
 
     {%block content%}
     <h1 class="display-4 text-white text_data">Blockchain Data</h1>
-    <a href="/reset" onclick="get('/reset', printer, 'result')" class="btn btn-primary float-right">Create Block</a>
+    <a href="/create" onclick="get('/create', event, printer, 'result')" class="btn btn-primary float-right">Create Block</a>
     <div class="result"></div>
     {% set index = 0 %}
     {% for block in blockchain %}
