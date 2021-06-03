@@ -7,7 +7,8 @@
 
     {%block content%}
     <h1 class="display-4 text-white text_data">Blockchain Data</h1>
-    <button class="btn btn-primary float-right">Create Block</button>
+    <a href="/reset" onclick="get('/reset', printer, 'result')" class="btn btn-primary float-right">Create Block</a>
+    <div class="result"></div>
     {% set index = 0 %}
     {% for block in blockchain %}
     <div class="card text-white mb-12">
