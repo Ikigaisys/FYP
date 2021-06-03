@@ -328,7 +328,7 @@ class Blockchain:
     def chain_update(self, block, keep_data = True):
         # The block sent to me isn't the next block, eg: im at #3 and i get sent #6,
         # holes in-between 
-        while self.last_block[self.id].id < block.id:
+        while self.last_blocks[self.id].id < block.id:
             # 3 attempts for finding new block
             found = False
             for i in range(3):
