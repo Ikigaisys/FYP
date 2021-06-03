@@ -139,10 +139,10 @@ class Block:
                 if isinstance(tx_data, Transaction):
                     tx = tx_data
                 else:
-                    if 'extra' not in tx_data:
-                        tx_data['extra'] = None
+                    if 'extra' not in tx_data['details']:
+                        tx_data['details']['extra'] = None
 
-                    tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'], tx_data['extra'])
+                    tx = Transaction(tx_data['amount'], tx_data['fee'], tx_data['details']['category'], tx_data['details']['sender'], tx_data['details']['receiver'], tx_data['time'], tx_data['signature'], tx_data['details']['extra'])
 
                 if not tx.validate(self) or not tx.verify():
                     print('The block has an invalid transaction..')
