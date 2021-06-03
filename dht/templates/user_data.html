@@ -1,0 +1,58 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+        
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white">User Information</h1>
+    <br>
+    <form>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+            {% if 'node_id' in data %}
+            <label for="Node_ID" class="fs-6">Node ID</label>
+            <p class="form-control text-info fs-6" id="Node_ID">{{data["node_id"]}}</p>
+            {% endif %}
+            </div>
+            <div class="form-group col-md-6">
+                {% if 'chain_miner' %}
+                <label for="Chain Miner" class="fs-6">Blockchain Miner?</label>
+                <p class="form-control text-info fs-6" id="Chain Miner">{{data["chain_miner"]}}</p>
+                {% endif %}
+            </div>
+        </div>
+        <br>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                {% if 'server_port' %}
+                <label for="Server_Port" class="fs-6">Server Port</label>
+                <p class="form-control text-info fs-6" id="Server_Port">{{data["server_port"]}}</p>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-6">
+                {% if 'flask_port' %}
+                <label for="Flask Port" class="fs-6">Flask Port Number</label>
+                <p class="form-control text-info fs-6" id="Flask Port">{{data["flask_port"]}}</p>
+                {% endif %}
+            </div>
+        </div>
+        <br>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                {% if 'public_key' in data %}
+                <label for="Public_Key" class="fs-6">Public Key</label>
+                <p class="form-control text-info fs-6" id="Public_Key">{{data["public_key"]}}</p>
+                {% endif %}
+            </div>
+            <br>
+            <div class="form-group col-md-6">
+                {% if 'private_key' in data %}
+                <label for="Private_Key" class="fs-6">Private Key</label>
+                <p class="form-control text-info fs-6" id="Private_Key">{{data["private_key"]}}</p>
+                {% endif %}
+            </div>
+        </div>
+    </form>        
+    {%endblock%}

@@ -85,4 +85,83 @@ def get():
 
 @app.route('/')
 def index():
+   data = {
+      "node_id":"1234567890",
+      "public_key":"vqon1h0gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "private_key":"13hr0h1",
+      "server_port":"5678",
+      "chain_miner":"True",
+      "flask_port":"500"
+   }
+   return render_template('user_data.html', data = data)
+
+@app.route('/list_blockchains')
+def list_blockchains():
+   blockchain = [
+      {
+         'id':'9876543210',
+         'prev_hash':'hash not found',
+         'miner':'None',
+         'timestramp':'03/06/2021',
+         'nonce':'987789',
+         'data':[
+            {'amount':'1000',
+             'fee':'Rs.2', 
+             'category':'Islam',
+             'sender':'Ammar',
+             'receiver':'Hashir',
+             'time':'14/01/1999',
+             'signature':'xtz',
+             'extra':'Fraz'
+            }
+         ]
+      },
+      {
+         'id':'9876543210',
+         'prev_hash':'hash not found',
+         'miner':'None',
+         'timestramp':'03/06/2021',
+         'nonce':'987789',
+         'data':[
+            {'amount':'1000',
+             'fee':'Rs.2', 
+             'category':'Islam',
+             'sender':'Ammar',
+             'receiver':'Hashir',
+             'time':'14/01/1999',
+             'signature':'xtz',
+             'extra':'Fraz'
+            }
+         ]
+      }
+   ]
+   return render_template('blockchain.html', blockchain = blockchain)
+
+@app.route('/add_transaction')
+def add_transaction():
+   return render_template('add_transaction.html')
+
+@app.route('/transaction_inserted', methods=['GET', 'POST'])
+def transaction_inserted():
+   id = request.form['receiver_id']
+   category = request.form['category']
+   amount = request.form['amount']
+   print(id)
+   print(category)
+   print(amount)
+   return render_template('add_transaction.html')
+
+@app.route('/register_domain')
+def register_domain():
+   return render_template('register_domain.html')   
+
+@app.route('/domain_registered', methods=['GET','POST'])
+def domain_registered():
+   domain = request.form['domain_name']
+   IP = request.form['IP']
+   print(domain + " " + IP)
+   return render_template('register_domain.html')
+
+@app.route('/submit_button')
+def submit_button():
    return render_template('index.html')
