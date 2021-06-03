@@ -68,6 +68,21 @@ class SQLiteHashTable:
             db.execute("insert into " + self.tablename + " (key, value) values (?, ?)", (key, value))
         else:
             db.execute("update " + self.tablename + " set value=? where key=?", (key, value))
+    
+    def fetchall(self):
+        cursor = db.con.cursor()
+        result = []
+        values = cursor.execute("SELECT key,value from " + self.tablename)
+        for value in values:
+            key = value['key']
+            value = value['value']
+            if self.type == 'float':
+                value = float(value)
+            elif self.type == 'int':
+                value = int(value)
+            result.append(key,value)
+        cursor.close()
+        return result
 
 class FileHashTable:
 

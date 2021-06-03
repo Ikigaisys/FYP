@@ -182,7 +182,7 @@ class DHT:
                 print(result)"""
 
     def broadcast(self, _key, _value):
-        for node_id, value in self.all_ips_hashtable.dict.items():
+        for node_id, value in self.all_ips_hashtable.fetchall():
             ip, port = value.split(":")
             asyncio.run_coroutine_threadsafe(
                 self.chain.dht.node.protocol.call_store(Node(digest(int(node_id, 16)), ip, int(port)), digest(_key), _value), 
