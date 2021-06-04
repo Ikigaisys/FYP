@@ -150,7 +150,7 @@ class DHT:
                 shutil.copyfile('templates\\kademlia_o.csv', 'kademlia.csv')
                 shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
                 open('network_nodes_list.txt', 'w').close()
-                self.chain = Blockchain(self, Block(0, None), DHT.config.getboolean('blockchain', 'miner'))
+                self.chain = Blockchain(self, Block(0, '0', timestamp=0), DHT.config.getboolean('blockchain', 'miner'))
                 asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
 
             elif data == 'reset_t':
