@@ -72,7 +72,7 @@ class DHT:
             block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
 
             if self.chain.accept_block(block, data['store'] or None):
-                storage[domain] = value
+                storage[key] = value
                 return True
             return False
 
