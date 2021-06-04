@@ -381,9 +381,6 @@ class Blockchain:
                 print("TODO: Fork and save both")
                 return False
 
-        print(self.last_blocks[self.id])
-        print(block.prev_hash)
-        print(self.last_blocks[self.id].hash_stored())
         if self.last_blocks[self.id].id + 1 == block.id and block.prev_hash == self.last_blocks[self.id].hash_stored() and block.validate_proof() and self.tx_perform(block, True):
             #self.last_block = block
             self.chain_append(block, keep_data)
