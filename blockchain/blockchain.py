@@ -482,7 +482,7 @@ class Blockchain:
                 extra TEXT, amount REAL, fee REAL,
                 category CHAR(16))
             """)
-            block = Block(self.last_blocks[self.id].id + 1, self.last_blocks[self.id].hash(), key_string[1])
+            block = Block(self.last_blocks[self.id].id + 1, self.last_blocks[self.id].hash_stored(), key_string[1])
             cur = db.con.cursor()
             cur.execute("SELECT * from transactions")
             for trans in cur:
