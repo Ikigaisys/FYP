@@ -192,8 +192,10 @@ class Block:
         return hashlib.sha256(encoded_block).hexdigest()
 
     def hash_stored(self):
+        if hasattr(self, 'stored_hash') and self.stored_hash is None:
+            delattr(self, 'stored_hash')
         if hasattr(self, 'stored_hash'):
-            return self.stored_hash
+            return self.stored_hash            
         return self.hash()
 
     def demo_create(self):
@@ -218,7 +220,7 @@ class Blockchain:
         db.execute("""
             CREATE TABLE IF NOT EXISTS blocks 
             (id INTEGER, prev_hash CHAR(64), miner CHAR(460),
-            timestamp INTEGER, nonce INTEGER, data TEXT, stored_hash CHAR(64)
+            timestamp INTEGER, nonce INTEGER, data TEXT, stored_hash CHAR(64),
             chain INTEGER, PRIMARY KEY (id, chain))
         """)
         cur = db.con.cursor()
@@ -231,6 +233,8 @@ class Blockchain:
             block = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (self.id, blockchain['last_block']))
             if block is not None:
                 self.last_blocks[blockchain['id']] = Block(block['id'], block['prev_hash'], block['miner'], block['timestamp'], block['nonce'], json.loads(block['data']))
+                if 'stored_hash' in block:
+                    self.last_blocks[blockchain['id']].stored_hash = block['stored_hash']
         cur.close()
         if len(self.chains) == 0:
             self.id = db.execute('insert into blockchain (last_block, fork_location) values (?,?)', (0,0))
