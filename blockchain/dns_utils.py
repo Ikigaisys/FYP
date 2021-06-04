@@ -12,10 +12,11 @@ def domain_broadcast(dht, block):
                 'domain': tx.details['extra']
             }
             value_encoded = json.dumps(value)
-            dht.broadcast(domain.domain, value_encoded)
+            dht.set(domain.domain, value_encoded)
 
 def domain_find(blockchain, domain):
     value = blockchain.dht.get(domain)
+    value = json.loads(value) if value != None else None
     if  (value is not None and value['type'] == 'domain'):
 
         block_id = value['block']

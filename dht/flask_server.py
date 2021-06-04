@@ -34,7 +34,7 @@ def reset():
    db.execute("delete from transactions")
    db.execute("delete from accounts")
    db.execute("delete from blocks")
-   db.execute("delete from network_nodes_list")
+   # db.execute("delete from network_nodes_list")
    db.execute("""
          CREATE TABLE IF NOT EXISTS transactions 
          (sender CHAR(460), receiver CHAR(460),

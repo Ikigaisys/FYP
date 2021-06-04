@@ -64,7 +64,7 @@ class DHT:
         # Blockchain
         self.chain = Blockchain(self, DHT.config.getboolean('blockchain', 'miner'))
 
-    def callback_thread(self, sender, nodeid, key, value):
+    def callback_thread(self, sender, nodeid, key, value, storage):
         data = json.loads(value)
 
         if data['type'] == 'block':
@@ -72,6 +72,7 @@ class DHT:
             block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
 
             if self.chain.accept_block(block, data['store'] or None):
+                storage[domain] = value
                 return True
             return False
 
@@ -81,14 +82,15 @@ class DHT:
             block = Block(bd['id'], bd['prev_hash'], bd['miner'], bd['timestamp'], bd['nonce'], bd['data'])
             if self.chain.validate_block(block):
                 if block.find_transaction_by_extra(domain):
+                    storage[domain] = json.dumps({'type': domain, 'value': block.id})
                     return True
             return False
 
         return False # reject data insertion to DHT by default
 
-    def receive_callback(self, sender, nodeid, key, value):
+    def receive_callback(self, sender, nodeid, key, value, storage):
         
-        cb_thread = threading.Thread(target=self.callback_thread, args=(sender, nodeid, key, value))
+        cb_thread = threading.Thread(target=self.callback_thread, args=(sender, nodeid, key, value, storage))
 
         cb_thread.start()
 
