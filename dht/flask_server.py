@@ -30,11 +30,18 @@ def bootstrap():
 
 @app.route('/reset')
 def reset():
+   db.execute("drop table blockchain")
    db.execute("delete from transactions")
    db.execute("delete from accounts")
-   db.execute("delete from blockchain")
    db.execute("delete from blocks")
    db.execute("delete from network_nodes_list")
+   db.execute("""
+         CREATE TABLE IF NOT EXISTS transactions 
+         (sender CHAR(460), receiver CHAR(460),
+         private_key CHAR(1732), signature TEXT,
+         extra TEXT, amount REAL, fee REAL,
+         category CHAR(16))
+   """)
    db.execute("""
       insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values 
       (1,0,'domain',
@@ -53,6 +60,13 @@ def reset():
 @app.route('/reset_t')
 def reset_t():
    db.execute("delete from transactions")
+   db.execute("""
+         CREATE TABLE IF NOT EXISTS transactions 
+         (sender CHAR(460), receiver CHAR(460),
+         private_key CHAR(1732), signature TEXT,
+         extra TEXT, amount REAL, fee REAL,
+         category CHAR(16))
+   """)
    db.execute("""
       insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values 
       (1,0,'domain',
