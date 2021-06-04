@@ -218,7 +218,7 @@ class Blockchain:
         db.execute("""
             CREATE TABLE IF NOT EXISTS blocks 
             (id INTEGER, prev_hash CHAR(64), miner CHAR(460),
-            timestamp INTEGER, nonce INTEGER, data TEXT,
+            timestamp INTEGER, nonce INTEGER, data TEXT, stored_hash CHAR(64)
             chain INTEGER, PRIMARY KEY (id, chain))
         """)
         cur = db.con.cursor()
@@ -371,7 +371,10 @@ class Blockchain:
             chain = self.id
         block = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (chain, id))
         if block is not None:
-            return Block(block['id'], block['prev_hash'], block['miner'], block['timestamp'], block['nonce'], json.loads(block['data']))
+            blk = Block(block['id'], block['prev_hash'], block['miner'], block['timestamp'], block['nonce'], json.loads(block['data']))
+            if 'stored_hash' in block:
+                blk.stored_hash = block['stored_hash']
+            return blk
         """for blk, i in enumerate(self.chain):
             if self.chain[blk].id == id:
                 return self.chain[blk]"""
@@ -394,12 +397,16 @@ class Blockchain:
         # Handle append in array/replacement in array
         tblock = db.fetchone("SELECT * from blocks where chain = ? and id = ?", (chain, block.id))
         blockstr = json.dumps(todict(block.data), sort_keys = True)
+        stored_hash = None
+        if hasattr(block, 'stored_hash'):
+            stored_hash = block.hash_stored()
+
         if tblock is None:
-            db.execute('insert into blocks (id, prev_hash, miner, timestamp, nonce, data, chain) values (?,?,?,?,?,?,?)',
-                (block.id, block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain))
+            db.execute('insert into blocks (id, prev_hash, miner, timestamp, nonce, data, chain, stored_hash) values (?,?,?,?,?,?,?,?)',
+                (block.id, block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain, stored_hash))
         else:
-            db.execute('update blocks set prev_hash=?, miner=?, timestamp=?, nonce=?, data=?, chain=? where id=?',
-                (block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain, block.id))
+            db.execute('update blocks set prev_hash=?, miner=?, timestamp=?, nonce=?, data=?, chain=?, stored_hash=? where id=?',
+                (block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain, stored_hash, block.id))
         
         """for blk, i in enumerate(self.chain):
             if self.chain[blk].id == block.id:
