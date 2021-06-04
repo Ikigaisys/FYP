@@ -259,7 +259,7 @@ class Blockchain:
         cur.close()
         if len(self.chains) == 0:
             self.id = db.execute('insert into blockchain (last_block, fork_location) values (?,?)', (0,0))
-            self.chain_append(Block(0, 0, timestamp=0))
+            self.chain_append(Block(0, '0', timestamp=0))
 
             """if os.path.exists('blockchain.txt') and os.stat('blockchain.txt').st_size != 0:
             with open('blockchain.txt', 'r') as file:
