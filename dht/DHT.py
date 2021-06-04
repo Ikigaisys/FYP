@@ -94,6 +94,8 @@ class DHT:
 
         cb_thread.start()
 
+        return True
+
 
     def server(self):
         try:
