@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import operator
 import time
 from datetime import datetime
 from .encryption import Signatures
@@ -188,7 +189,7 @@ class Block:
         return block_hash[:3] == "000"
 
     def hash(self):
-        encoded_block = f'{todict(self)}'.encode()
+        encoded_block = f'{self.to_dict()}'.encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
     def hash_stored(self):
@@ -202,6 +203,26 @@ class Block:
         self.miner = key_string[1]
         self.nonce = self.proof_of_work()
 
+    def to_dict(self):
+        dict_form = {
+            'id': self.id,
+            'timestamp': self.timestamp,
+            'prev_hash': self.prev_hash,
+            'nonce': self.nonce,
+            'miner': self.miner,
+            'data': None
+        }
+
+        if self.data is not None:
+            dict_form['data'] = []
+            for data_part in self.data:
+                sorted_data = dict(sorted(data_part.__dict__.items(), key=operator.itemgetter(0)))
+                sorted_data['details'] = dict(sorted(sorted_data['details'].items(), key=operator.itemgetter(0)))
+                dict_form['data'].append(sorted_data)
+        if hasattr(self, 'stored_hash'):
+            dict_form['stored_hash'] = self.stored_hash
+
+        return dict_form
 
 class Blockchain:
 
