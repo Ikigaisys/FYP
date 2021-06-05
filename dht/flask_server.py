@@ -5,7 +5,7 @@ from flask import Flask, Response, render_template, jsonify, request
 from flask_cors import CORS, cross_origin
 import shutil
 import asyncio
-from DataController import db
+from DataController import *
 
 config = ConfigParser()
 config.read('config.ini')
@@ -108,7 +108,8 @@ def index():
       "private_key": config.get('keys', 'private_key').replace('$$', '\n'),
       "server_port": config.get('server', 'port'),
       "chain_miner": config.get('blockchain', 'miner'),
-      "flask_port": config.get('flask', 'port')
+      "flask_port": config.get('flask', 'port'),
+      "public_copy": config.get('keys', 'public_key')
    }
    return render_template('user_data.html', data = data)
 
@@ -161,7 +162,11 @@ def list_blockchains():
 
 @app.route('/add_transaction')
 def add_transaction():
-   return render_template('add_transaction.html')
+   if request.args.get("public_key"):
+      public_key = request.args.get("public_key")
+      return render_template('add_transaction.html', public_key=public_key)
+   else:
+      return render_template('add_transaction.html')
 
 @app.route('/transaction_inserted', methods=['GET', 'POST'])
 def transaction_inserted():
@@ -187,3 +192,53 @@ def domain_registered():
 @app.route('/submit_button')
 def submit_button():
    return render_template('index.html')
+
+@app.route('/register_contact', methods=['GET', 'POST'])
+def register_contact():
+   if "receiver_id" in request.form and "receiver_name" in request.form:
+      id =  request.form["receiver_id"]
+      name = request.form["receiver_name"]
+      contact = SQLiteHashTable('contacts')
+      contact[id] = name
+   print(request.args.items())
+   return render_template('register_contact.html')
+
+@app.route('/all_contact', methods=['GET', 'POST'])
+def all_contact():
+   contact = SQLiteHashTable('contacts')
+   data = []
+   for id, name in contact.fetchall():
+      person={
+         "id":id,
+         "name":name
+      }
+      data.append(person)
+   for i in range(10):
+      persons={
+         "id": "12345",
+         "name": "hashir"
+      }
+      data.append(persons)
+   return render_template('all_contacts.html', data = data)
+
+@app.route('/delete_contact')
+def delete_contact():
+   if request.args.get("public_key"):
+      public_key = request.args.get("public_key")
+      contact = SQLiteHashTable('contacts')
+      contact.delete_contact(public_key)
+   data = []
+   contact = SQLiteHashTable('contacts')
+   for id, name in contact.fetchall():
+      person={
+         "id":id,
+         "name":name
+      }
+      data.append(person)
+   for i in range(10):
+      persons={
+         "id": "12345",
+         "name": "hashir"
+      }
+      data.append(persons)
+   return render_template('all_contacts.html', data = data)

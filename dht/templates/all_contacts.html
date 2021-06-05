@@ -1,0 +1,31 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+         .text_data{display: inline;}
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">All Contacts</h1>
+    <a href="{{url_for('register_contact')}}" class="btn btn-primary float-right" value="Register Contact">Register Contact</a>    
+    <br>
+    <br>
+
+    {% for row in data %}
+        {% if 3 - (loop.index % 3) == 2  %}
+            <div class="card-group">
+        {% endif %}
+        <div class="card text_data m-2" style="width: 18rem;">
+            <div class="card-body">
+            <h5 class="card-title">{{row["name"]}}</h5>
+            <p class="card-tex breakt">{{row["id"]}}</p>
+            <a href="{{url_for('add_transaction')}}?public_key={{row['id']}}" class="card-link btn btn-primary">Add Transaction</a><br>
+            <a href="{{url_for('delete_contact')}}?public_key={{row['id']}}" class="card-link btn btn-primary">Delete Contact</a>
+            </div>
+        </div>
+        {% if loop.index % 3 == 0 %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    {%endblock%}

@@ -1,0 +1,26 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+         .text_data{display: inline;}
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">Register Contact</h1>
+    <a type="submit" class="btn btn-primary float-right" value="Register Contact">All Contacts</a>    
+    <br>
+    <br>
+    <form method="POST">
+        <div class="form-group">
+            <label for="receiver_pkey" class="fs-6">Receiver's Public Key</label>
+            <input type="text" class="form-control" name="receiver_id" id="receiver_pkey" placeholder="receiver's public key">
+        </div>
+        <br>
+        <div class="form-group">
+            <label for="receiver_name" class="fs-6">Receiver's Name</label>
+            <input type="text" class="form-control" name="receiver_name" id="receiver_name" placeholder="receiver's name">
+        </div>
+        <br>
+        <input type="submit" class="btn btn-primary" value="Register Contact">
+    </form>
+    {%endblock%}

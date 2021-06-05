@@ -11,7 +11,11 @@
     <form method="POST" action="transaction_inserted">
         <div class="form-group">
             <label for="receiver_pkey" class="fs-6">Receiver's Public Key</label>
+            {% if public_key %}
+                <input type="text" class="form-control" name="receiver_id" id="receiver_pkey" value={{public_key}} placeholder="receiver's public key">
+            {% else %}
             <input type="text" class="form-control" name="receiver_id" id="receiver_pkey" placeholder="receiver's public key">
+            {% endif %}
         </div>
         <br>
         <div class="form-group">
