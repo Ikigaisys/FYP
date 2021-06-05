@@ -23,24 +23,24 @@
   <div class="wrapper ">
     <div class="sidebar" data-color="purple" data-background-color="black" data-image="./assets/img/sidebar-2.jpg">
       <div class="logo">
-        <a href="http://www.creative-tim.com" class="simple-text logo-normal">
+        <a href="{{url_for('index')}}" class="simple-text logo-normal">
           IKI Admin Panel
         </a>
       </div>
       <div class="sidebar-wrapper">
         <ul class="nav">
           <li class="nav-item active  ">
-            <a class="nav-link" href="javascript:void(0)">
+            <a class="nav-link" href="{{url_for('index')}}">
               <i class="material-icons">dashboard</i>
               <p>Dashboard</p>
             </a>
           </li>
-          <li class="nav-item ">
+          <!--<li class="nav-item ">
             <a class="nav-link" href="./user.html">
               <i class="material-icons">person</i>
               <p>User Profile</p>
             </a>
-          </li>
+          </li>-->
           <li class="nav-item ">
             <a class="nav-link" href="{{url_for('list_blockchains')}}">
                 <i class="material-icons fas fa-link fa-2x"></i>
@@ -60,11 +60,25 @@
             </a>
           </li>
           <li class="nav-item ">
-            <a class="nav-link" href="{{url_for('reset')}}">
-                <i class="material-icons fas fa-trash-restore-alt fa-2x"></i>
-              <p>Reset</p>
+            <a href="{{url_for('bootstrap')}}" onclick="get('/bootstrap', event, pause, printer, 'resultb', 'resultb')" class="nav-link">
+                <i class="material-icons fas fa-sync fa-2x"></i>
+              <p>Bootstrap <span id="resultb"></span></p>              
             </a>
           </li>
+          <li class="nav-item ">
+            <a href="{{url_for('reset')}}" onclick="get('/reset', event, pause, printer, 'resultr', 'resultr')" class="nav-link">
+                <i class="material-icons fas fa-trash-restore-alt fa-2x"></i>
+              <p>Reset <span id="resultr"></span></p>              
+            </a>
+          </li>
+          <li class="nav-item active active-pro c-logo my-3">
+            <a class="nav-link active" href="http://ikigaisys.com/?DNS">
+                <h3>
+                  <img src="{{url_for('static',filename='ikigai.svg')}}" />
+                  IKIGAI SYS
+                </h3>
+              </a>
+          </li>          
           <!-- your sidebar here -->
         </ul>
       </div>

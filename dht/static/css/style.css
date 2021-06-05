@@ -1,3 +1,14 @@
 .break {
     word-break: break-all;
 }
+.c-logo h3 {
+    text-align: center;
+    margin: 0;
+    line-height: 40px;
+    font-size: 20px;
+}
+.c-logo img {
+    height: 40px;
+    margin-right: 10px;
+    vertical-align: top;
+}

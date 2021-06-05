@@ -22,11 +22,13 @@ flask_variables = FlaskVariables()
 
 @app.route('/create')
 def create():
-   return str(flask_variables.dht.chain.create_block())
+   value = flask_variables.dht.chain.create_block()
+   return jsonify({"data": value if value != None else "Didn't succeed" })
 
 @app.route('/bootstrap')
 def bootstrap():
-   return str(flask_variables.dht.node.bootstrap(flask_variables.send_nodes))
+   flask_variables.dht.node.bootstrap(flask_variables.send_nodes)
+   return jsonify({"data": "Done"})
 
 @app.route('/reset')
 def reset():
@@ -55,7 +57,8 @@ def reset():
    shutil.copyfile('templates\\kademlia_o.csv', 'kademlia.csv')
    flask_variables.dht.chain = Blockchain(flask_variables.dht, config.getboolean('blockchain', 'miner'))
    asyncio.run_coroutine_threadsafe(flask_variables.dht.node.bootstrap(flask_variables.send_nodes), flask_variables.dht.loop)
-   return str("OK, lol")
+
+   return jsonify({"data": "OK, lol"})
 
 @app.route('/reset_t')
 def reset_t():

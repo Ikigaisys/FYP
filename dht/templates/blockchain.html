@@ -7,8 +7,8 @@
 
     {%block content%}
     <h1 class="display-4 text-white text_data">Blockchain Data</h1>
-    <a href="/create" onclick="get('/create', event, printer, 'result')" class="btn btn-primary float-right">Create Block</a>
-    <div class="result"></div>
+    <a href="{{url_for('create')}}" onclick="get('/create', event, pause, printer, 'result', 'result')" class="btn btn-primary float-right">Create Block</a>
+    <div id="result" class="text-white my-3 mx-3 float-right"></div>
     {% set index = 0 %}
     {% for block in blockchain %}
     <div class="card text-white mb-12">

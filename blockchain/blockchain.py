@@ -82,8 +82,7 @@ class Transaction:
         self.details =  {   'category': category, 
                             'sender': sender, 
                             'receiver': receiver, 
-                            'extra': extra 
-                        }
+                            'extra': extra }
         self.signature = signature
 
     def validate(self, blockchain, new = False, block_id = None):
@@ -333,17 +332,17 @@ class Blockchain:
 
             # If transaction type is domain, money should be burnt
             if tx.details['category'] == 'domain':
-                accounts[sender] -= tx.amount + tx.fee
-                accounts[miner] += tx.fee
+                accounts[sender] = accounts[sender] - tx.amount + tx.fee
+                accounts[miner] = accounts[miner] + tx.fee
 
             else:
-                accounts[sender] -= tx.amount + tx.fee
+                accounts[sender] = accounts[sender] - tx.amount - tx.fee
                 if accounts[receiver] is None:
                     accounts[receiver] = 0
-                accounts[receiver] += tx.amount
-                accounts[miner] += tx.fee
+                accounts[receiver] = accounts[receiver] + tx.amount
+                accounts[miner] = accounts[miner] + tx.fee
 
-        accounts[miner] += 20
+        accounts[miner] = accounts[miner] + 20
         return True 
 
     # Update the chain by performing missing/new transactions
@@ -380,6 +379,11 @@ class Blockchain:
                 print("Network gave me a different last block, don't trust this new one")
                 print("TODO: Fork and save both")
                 return False
+
+        print(self.last_blocks[self.id])
+        print(block.prev_hash)
+        print(block.prev_hash == self.last_blocks[self.id].hash_stored())
+        print(block.validate_proof())
 
         if self.last_blocks[self.id].id + 1 == block.id and block.prev_hash == self.last_blocks[self.id].hash_stored() and block.validate_proof() and self.tx_perform(block, True):
             #self.last_block = block
