@@ -101,6 +101,7 @@ class Transaction:
                         dmn_block = domain_find(blockchain, dmn.domain)
                     if dmn_block is None or dmn_block[0] == block_id:
                         return True
+                return False
             return True
         return False
 
@@ -519,7 +520,6 @@ class Blockchain:
             
             #block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
             #block.demo_create()
-            print(":::::::::::::::::::::::::::::::::::::\n\n\n\n\n" + block.hash() + "\n\n\n\n\n\n")
             key = block.id
             value = {
                 'type': 'block',
