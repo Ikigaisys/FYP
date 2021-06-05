@@ -78,11 +78,11 @@ class DHT:
 
         if data['type'] == 'domain':
             bd = json.loads(data['block'])
-            domain = data['domain']
+            domain, ip, port = data['domain'].split(':')
             block = Block(bd['id'], bd['prev_hash'], bd['miner'], bd['timestamp'], bd['nonce'], bd['data'])
             if self.chain.validate_block(block):
-                if block.find_transaction_by_extra(domain):
-                    storage[domain] = json.dumps({'type': domain, 'value': block.id})
+                if block.find_transaction_by_extra(data['domain']):
+                    storage[digest(domain)] = json.dumps({'type': 'domain', 'value': block.id})
                     return True
             return False
 

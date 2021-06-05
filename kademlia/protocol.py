@@ -19,6 +19,7 @@ class KademliaProtocol(RPCProtocol):
         self.source_node = source_node
         self.callback = callback
         self.broadcast_table = broadcast_table
+        self.miss_table = {}
 
     def get_refresh_ids(self):
         """
@@ -124,10 +125,16 @@ class KademliaProtocol(RPCProtocol):
         we get no response, make sure it's removed from the routing table.
         """
         if not result[0]:
-            log.warning("no response from %s, removing from router", node)
-            self.router.remove_contact(node)
+            if self.miss_table[node.id] <= 0:
+                log.warning("no response from %s, removing from router", node)
+                del(self.miss_table[node.id])
+                self.router.remove_contact(node)
+            else:
+                log.warning("no response from %s, %d chances left before removal", (self.miss_table[node.id], node))
+                self.miss_table[node.id] -= 1
             return result
 
         log.info("got successful response from %s", node)
+        self.miss_table[node.id] = 3 # Giving 3 chances to the node
         self.welcome_if_new(node)
         return result
