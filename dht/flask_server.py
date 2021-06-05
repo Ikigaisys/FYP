@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import flask
 from flask.wrappers import Request
 from blockchain.blockchain import Transaction, Blockchain, Block
 from flask import Flask, Response, render_template, jsonify, request
@@ -6,6 +7,7 @@ from flask_cors import CORS, cross_origin
 import shutil
 import asyncio
 from DataController import *
+from blockchain.dns_utils import domain_find
 
 config = ConfigParser()
 config.read('config.ini')
@@ -27,12 +29,13 @@ def create():
 
 @app.route('/bootstrap')
 def bootstrap():
-   flask_variables.dht.node.bootstrap(flask_variables.send_nodes)
+   asyncio.run_coroutine_threadsafe(flask_variables.dht.node.bootstrap(flask_variables.send_nodes), flask_variables.dht.loop)
    return jsonify({"data": "Done"})
 
 @app.route('/reset')
 def reset():
    db.execute("drop table blockchain")
+   db.execute("delete from dht_data")
    db.execute("delete from transactions")
    db.execute("delete from accounts")
    db.execute("delete from blocks")
@@ -49,7 +52,7 @@ def reset():
       (1,0,'domain',
       '-----BEGIN PUBLIC KEY-----$$MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UN6XU6w6k7Rikx/4XIr$$MkzBpAVKPchHIrbrQ0BGoxznFL2NiFm60e5eo/a6DXlY9/H72N2A9/RohKf+5sVI$$AnnNkCl3Z+junWbUpUSEQgP7HU8lcenVZTYxPjzy8WlceM79Z719bPNjemBrqLvC$$aR0ZOgH6kyHUVh+LudPMsiTyeWdZB3UA1pvUqQvkfRrXW2NOsdejON+4GK2KTgOi$$nvL/L29cS6htRSrm2JASdU0awPqifwGiQbT1NE6ZFhPcY0UXBkJOK8hO0uOJcnzx$$6oyL3SwOO54/dRkm7y+9W7LuUy6s0765NWRAR4FN4BqGXAsQTk1CPfkdSyY4Axip$$awIDAQAB$$-----END PUBLIC KEY-----$$',
       '0','-----BEGIN PRIVATE KEY-----$$MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDVQ3pdTrDqTtGK$$TH/hcisyTMGkBUo9yEcitutDQEajHOcUvY2IWbrR7l6j9roNeVj38fvY3YD39GiE$$p/7mxUgCec2QKXdn6O6dZtSlRIRCA/sdTyVx6dVlNjE+PPLxaVx4zv1nvX1s82N6$$YGuou8JpHRk6AfqTIdRWH4u508yyJPJ5Z1kHdQDWm9SpC+R9GtdbY06x16M437gY$$rYpOA6Ke8v8vb1xLqG1FKubYkBJ1TRrA+qJ/AaJBtPU0TpkWE9xjRRcGQk4ryE7S$$44lyfPHqjIvdLA47nj91GSbvL71bsu5TLqzTvrk1ZEBHgU3gGoZcCxBOTUI9+R1L$$JjgDGKlrAgMBAAECggEAOP4Bc3IWIWfS46yx+CO0m4qbrSOkxYICUKqlkKFavzh4$$ILjPXALuxC95p0PGUNd/CTPn4/q9/oWYcOscWbubFN5MKxyJxoEfU30pkskOtz2t$$HBYMobalypiC7GkJW66Wgcp/OfwPys/4Y7nky4Dx4XlfRntE5ZEC18kyZATQDUMJ$$g2/Mr0o8OEeGJG2VuPXuE8QB2mJ0gJ9MoD6Y57eX2gIdQv8/i/hwWNlWJf3TjML8$$bc6/gpoHSKAjbKHtnSFpGAqvFyhvBeVwrn84vrm3JzUKKMr9ARTmGkqHeX1HQTuQ$$/j+j14nZtNPuNTDAQcrowLRlerKp4OaHKqfpBSl0UQKBgQDv9/eL9o5ENDGdIyAX$$1G3whAOqFA9qKgvp7yQvi9e1B0AdkzwljHv4/ZDUShGyb+39O1kosFOBCb26WlqJ$$0MJPGLgf4W81RJMqa279Wu1tfHAayKQt3iYEteYbgNIkJhiowWk2s3UWDrTMw5qo$$rZbggcBT/vUMo8UKVShvztIVTQKBgQDjgsqg6DlFWmp5TL5tLGhkUSkCvkkZ/vTS$$O39W+5RUARZB60yUr64ScdloTx2ASVUKoBluj9WY1WXhATlIFfHlUnJvECJRb7jy$$4hAj7tTNlrbGplx3npqXUBKZPmlH9hhLkKa0yTvokkVYx3my/NpvVl9XutXCi282$$hWV6miX9lwKBgQCuqDiQsn+RvLtvt6UgMwlhyXQxUjB2AOxy9A/OW2ZA6GoOHJ/m$$ZH3HGCdVnCONUFJTweJ+7veYL9Lb0++Z50vF7iP1cEtU5fiHI3LBDHFLAwtFM0vr$$5oidXReCZRyOGvxPt5YwriVGTKXjc2sZ4l6yQT4O5L7O2FQN1TV9S3c08QKBgQDH$$82UecboTx9kX7mjWDldZAzNl49LfdAG62uuZiNXd1m63VJMjghscvs5yLEYjP0/s$$XLS9RNBW2AYH8Elln1PPVdyY27ctl2EWpbPFwNtqLHFKuV8/CjeXkJon8IAa7KCB$$mQnKjamHRzaHRhkhQ7S+cUyuD9haeK0vX6HGVL/a1QKBgDgD9Bx68aTEeHajgv01$$pa8n123ffbPIJxepPDN1UvhTbh9MtMOFzsPOzA4M2E9imwLUZItF2zfNZh7RXu1G$$00V9gbsNvu6bwPKoMNIlWgr/seJ6pc5id0jhKAkSNmVRC+FF3NM1qBxBlYXZTvzy$$87DuSYxAg5oXK8X06+t+WYtN$$-----END PRIVATE KEY-----$$',
-      'facebook.com:172.25.48.135:5678')
+      'helloworld.iki:172.25.48.135:80')
    """)
    db.execute("""
       insert into accounts (key, value) values ('-----BEGIN PUBLIC KEY-----$$MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UN6XU6w6k7Rikx/4XIr$$MkzBpAVKPchHIrbrQ0BGoxznFL2NiFm60e5eo/a6DXlY9/H72N2A9/RohKf+5sVI$$AnnNkCl3Z+junWbUpUSEQgP7HU8lcenVZTYxPjzy8WlceM79Z719bPNjemBrqLvC$$aR0ZOgH6kyHUVh+LudPMsiTyeWdZB3UA1pvUqQvkfRrXW2NOsdejON+4GK2KTgOi$$nvL/L29cS6htRSrm2JASdU0awPqifwGiQbT1NE6ZFhPcY0UXBkJOK8hO0uOJcnzx$$6oyL3SwOO54/dRkm7y+9W7LuUy6s0765NWRAR4FN4BqGXAsQTk1CPfkdSyY4Axip$$awIDAQAB$$-----END PUBLIC KEY-----$$', 20)
@@ -75,7 +78,7 @@ def reset_t():
       (1,0,'domain',
       '-----BEGIN PUBLIC KEY-----$$MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UN6XU6w6k7Rikx/4XIr$$MkzBpAVKPchHIrbrQ0BGoxznFL2NiFm60e5eo/a6DXlY9/H72N2A9/RohKf+5sVI$$AnnNkCl3Z+junWbUpUSEQgP7HU8lcenVZTYxPjzy8WlceM79Z719bPNjemBrqLvC$$aR0ZOgH6kyHUVh+LudPMsiTyeWdZB3UA1pvUqQvkfRrXW2NOsdejON+4GK2KTgOi$$nvL/L29cS6htRSrm2JASdU0awPqifwGiQbT1NE6ZFhPcY0UXBkJOK8hO0uOJcnzx$$6oyL3SwOO54/dRkm7y+9W7LuUy6s0765NWRAR4FN4BqGXAsQTk1CPfkdSyY4Axip$$awIDAQAB$$-----END PUBLIC KEY-----$$',
       '0','-----BEGIN PRIVATE KEY-----$$MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDVQ3pdTrDqTtGK$$TH/hcisyTMGkBUo9yEcitutDQEajHOcUvY2IWbrR7l6j9roNeVj38fvY3YD39GiE$$p/7mxUgCec2QKXdn6O6dZtSlRIRCA/sdTyVx6dVlNjE+PPLxaVx4zv1nvX1s82N6$$YGuou8JpHRk6AfqTIdRWH4u508yyJPJ5Z1kHdQDWm9SpC+R9GtdbY06x16M437gY$$rYpOA6Ke8v8vb1xLqG1FKubYkBJ1TRrA+qJ/AaJBtPU0TpkWE9xjRRcGQk4ryE7S$$44lyfPHqjIvdLA47nj91GSbvL71bsu5TLqzTvrk1ZEBHgU3gGoZcCxBOTUI9+R1L$$JjgDGKlrAgMBAAECggEAOP4Bc3IWIWfS46yx+CO0m4qbrSOkxYICUKqlkKFavzh4$$ILjPXALuxC95p0PGUNd/CTPn4/q9/oWYcOscWbubFN5MKxyJxoEfU30pkskOtz2t$$HBYMobalypiC7GkJW66Wgcp/OfwPys/4Y7nky4Dx4XlfRntE5ZEC18kyZATQDUMJ$$g2/Mr0o8OEeGJG2VuPXuE8QB2mJ0gJ9MoD6Y57eX2gIdQv8/i/hwWNlWJf3TjML8$$bc6/gpoHSKAjbKHtnSFpGAqvFyhvBeVwrn84vrm3JzUKKMr9ARTmGkqHeX1HQTuQ$$/j+j14nZtNPuNTDAQcrowLRlerKp4OaHKqfpBSl0UQKBgQDv9/eL9o5ENDGdIyAX$$1G3whAOqFA9qKgvp7yQvi9e1B0AdkzwljHv4/ZDUShGyb+39O1kosFOBCb26WlqJ$$0MJPGLgf4W81RJMqa279Wu1tfHAayKQt3iYEteYbgNIkJhiowWk2s3UWDrTMw5qo$$rZbggcBT/vUMo8UKVShvztIVTQKBgQDjgsqg6DlFWmp5TL5tLGhkUSkCvkkZ/vTS$$O39W+5RUARZB60yUr64ScdloTx2ASVUKoBluj9WY1WXhATlIFfHlUnJvECJRb7jy$$4hAj7tTNlrbGplx3npqXUBKZPmlH9hhLkKa0yTvokkVYx3my/NpvVl9XutXCi282$$hWV6miX9lwKBgQCuqDiQsn+RvLtvt6UgMwlhyXQxUjB2AOxy9A/OW2ZA6GoOHJ/m$$ZH3HGCdVnCONUFJTweJ+7veYL9Lb0++Z50vF7iP1cEtU5fiHI3LBDHFLAwtFM0vr$$5oidXReCZRyOGvxPt5YwriVGTKXjc2sZ4l6yQT4O5L7O2FQN1TV9S3c08QKBgQDH$$82UecboTx9kX7mjWDldZAzNl49LfdAG62uuZiNXd1m63VJMjghscvs5yLEYjP0/s$$XLS9RNBW2AYH8Elln1PPVdyY27ctl2EWpbPFwNtqLHFKuV8/CjeXkJon8IAa7KCB$$mQnKjamHRzaHRhkhQ7S+cUyuD9haeK0vX6HGVL/a1QKBgDgD9Bx68aTEeHajgv01$$pa8n123ffbPIJxepPDN1UvhTbh9MtMOFzsPOzA4M2E9imwLUZItF2zfNZh7RXu1G$$00V9gbsNvu6bwPKoMNIlWgr/seJ6pc5id0jhKAkSNmVRC+FF3NM1qBxBlYXZTvzy$$87DuSYxAg5oXK8X06+t+WYtN$$-----END PRIVATE KEY-----$$',
-      'facebook.com:172.25.48.135:5678')
+      'helloworld.iki:172.25.48.135:80')
    """)
    return jsonify({"data": "OK, lol"}), 200, {'Content-Type': 'application/text'}
 
@@ -85,7 +88,7 @@ def get():
    if request.args.get('domain') is not None:
       domain = request.args.get('domain')
       print("request " + request.args.get('domain'))
-      result = flask_variables.dht.chain.domain_find(request.args.get('domain'))
+      result = domain_find(flask_variables.dht.chain, request.args.get('domain'))
       if result is None:
          print("domain request failed")
          ip = "0.0.0.0"

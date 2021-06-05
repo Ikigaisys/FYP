@@ -19,13 +19,13 @@ def domain_find(blockchain, domain):
     value = json.loads(value) if value != None else None
     if  (value is not None and value['type'] == 'domain'):
 
-        block_id = value['block']
+        block_id = value['value']
         # TODO: Cache
         if 'block_data' in value:
             1
 
         # Expired domain
-        if block_id + 100 > blockchain.last_blocks[blockchain.id].id:
+        if block_id + 100 < blockchain.last_blocks[blockchain.id].id:
             return None
 
         block = blockchain.chain_find(block_id)

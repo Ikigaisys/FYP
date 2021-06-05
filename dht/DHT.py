@@ -55,7 +55,7 @@ class DHT:
         self.loop = asyncio.get_event_loop()
         self.loop.set_debug(True)
 
-        self.node = Server(storage=FileStorage('kademlia.csv'), 
+        self.node = Server(storage=FileStorage('dht_data'), 
                            node_id=bytes.fromhex(DHT.config['node']['id']),
                            broadcast_table=self.all_ips_hashtable)
         # asyncio.run(self.bootstrapper())
@@ -78,11 +78,11 @@ class DHT:
 
         if data['type'] == 'domain':
             bd = json.loads(data['block'])
-            domain = data['domain']
+            domain, ip, port = data['domain'].split(':')
             block = Block(bd['id'], bd['prev_hash'], bd['miner'], bd['timestamp'], bd['nonce'], bd['data'])
             if self.chain.validate_block(block):
-                if block.find_transaction_by_extra(domain):
-                    storage[domain] = json.dumps({'type': domain, 'value': block.id})
+                if block.find_transaction_by_extra(data['domain']):
+                    storage[digest(domain)] = json.dumps({'type': 'domain', 'value': block.id})
                     return True
             return False
 
@@ -109,11 +109,11 @@ class DHT:
     def reader(self):
         addresses = DHT.config.get('bootstrap', 'address').split(',')
         ports = map(int, DHT.config.get('bootstrap', 'port').split(','))
-        send_nodes =  list(zip(addresses, ports))
+        self.send_nodes =  list(zip(addresses, ports))
         time.sleep(1)
-        asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+        asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
 
-        flask_variables.set(self, send_nodes)
+        flask_variables.set(self, self.send_nodes)
         app.run(port=DHT.config.getint('flask', 'port'))
 
         while True:
@@ -142,7 +142,7 @@ class DHT:
                 self.chain.create_block()
 
             elif data == 'bootstrap':
-                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
 
             elif data == 'reset':
                 shutil.copyfile('templates\\accounts_o.txt', 'accounts.txt')
@@ -151,7 +151,7 @@ class DHT:
                 shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
                 open('network_nodes_list.txt', 'w').close()
                 self.chain = Blockchain(self, Block(0, '0', timestamp=0), DHT.config.getboolean('blockchain', 'miner'))
-                asyncio.run_coroutine_threadsafe(self.node.bootstrap(send_nodes), self.loop)
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
 
             elif data == 'reset_t':
                 shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
@@ -193,9 +193,11 @@ class DHT:
                 self.loop)
 
     def set(self, _key, _value):
+        asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
         asyncio.run_coroutine_threadsafe(self.node.set(_key, _value), self.loop)
 
     def get(self, _key):
+        asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
         future = asyncio.run_coroutine_threadsafe(self.node.get(_key), self.loop)
         try:
             result = future.result(5)
