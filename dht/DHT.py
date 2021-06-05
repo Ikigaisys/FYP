@@ -55,7 +55,7 @@ class DHT:
         self.loop = asyncio.get_event_loop()
         self.loop.set_debug(True)
 
-        self.node = Server(storage=FileStorage('kademlia.csv'), 
+        self.node = Server(storage=FileStorage('dht_data'), 
                            node_id=bytes.fromhex(DHT.config['node']['id']),
                            broadcast_table=self.all_ips_hashtable)
         # asyncio.run(self.bootstrapper())

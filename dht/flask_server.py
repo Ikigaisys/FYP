@@ -34,6 +34,7 @@ def bootstrap():
 @app.route('/reset')
 def reset():
    db.execute("drop table blockchain")
+   db.execute("delete from dht_data")
    db.execute("delete from transactions")
    db.execute("delete from accounts")
    db.execute("delete from blocks")
