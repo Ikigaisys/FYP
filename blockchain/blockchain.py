@@ -158,7 +158,7 @@ class Block:
 
     def find_transaction_by_extra(self, extra):
         for tx in self.data:
-            if tx.extra == extra:
+            if tx.details['extra'] == extra:
                 return tx
         return None
 

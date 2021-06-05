@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import flask
 from flask.wrappers import Request
 from blockchain.blockchain import Transaction, Blockchain, Block
 from flask import Flask, Response, render_template, jsonify, request
@@ -27,7 +28,7 @@ def create():
 
 @app.route('/bootstrap')
 def bootstrap():
-   asyncio.run_coroutine_threadsafe(flask_variables.dht.node.bootstrap(flask_variables.send_nodes))
+   asyncio.run_coroutine_threadsafe(flask_variables.dht.node.bootstrap(flask_variables.send_nodes), flask_variables.dht.loop)
    return jsonify({"data": "Done"})
 
 @app.route('/reset')
