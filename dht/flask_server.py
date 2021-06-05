@@ -7,6 +7,7 @@ from flask_cors import CORS, cross_origin
 import shutil
 import asyncio
 from DataController import db
+from blockchain.dns_utils import domain_find
 
 config = ConfigParser()
 config.read('config.ini')
@@ -87,7 +88,7 @@ def get():
    if request.args.get('domain') is not None:
       domain = request.args.get('domain')
       print("request " + request.args.get('domain'))
-      result = flask_variables.dht.chain.domain_find(request.args.get('domain'))
+      result = domain_find(flask_variables.dht.chain, request.args.get('domain'))
       if result is None:
          print("domain request failed")
          ip = "0.0.0.0"
