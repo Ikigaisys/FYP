@@ -27,7 +27,7 @@ def create():
 
 @app.route('/bootstrap')
 def bootstrap():
-   flask_variables.dht.node.bootstrap(flask_variables.send_nodes)
+   asyncio.run_coroutine_threadsafe(flask_variables.dht.node.bootstrap(flask_variables.send_nodes))
    return jsonify({"data": "Done"})
 
 @app.route('/reset')
