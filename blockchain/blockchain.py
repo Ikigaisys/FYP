@@ -59,13 +59,12 @@ class Domain:
         self.port = None
 
     def to_object(self, extra):
-        if extra is None:
+        if len(extra.split(":")) == 3:
+            self.domain, self.value, self.port = extra.split(":")
+        else:
             self.domain = None
             self.value = None
             self.port = None
-    
-            if len(extra.split(":")) == 3:
-                self.domain, self.value, self.port = extra.split(":")
 
     def to_string(self):
         return self.domain + ":" + self.value + ":" + self.port
