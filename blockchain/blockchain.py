@@ -163,7 +163,7 @@ class Block:
         return None
 
     def serialize(self):
-        return json.dumps(todict(self), sort_keys=True)
+        return json.dumps(self.to_dict(), sort_keys=True)
 
     def proof_of_work(self):
         #previous_proof = last_block.proof
@@ -186,7 +186,7 @@ class Block:
         return block_hash[:3] == "000"
 
     def hash(self):
-        encoded_block = f'{self.to_dict()}'.encode()
+        encoded_block = self.serialize().encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
     def hash_stored(self):
@@ -215,6 +215,7 @@ class Block:
             for data_part in self.data:
                 sorted_data = dict(sorted(data_part.__dict__.items(), key=operator.itemgetter(0)))
                 sorted_data['details'] = dict(sorted(sorted_data['details'].items(), key=operator.itemgetter(0)))
+                sorted_data['signature'] = [int_val for int_val in sorted_data['signature']]
                 dict_form['data'].append(sorted_data)
         if hasattr(self, 'stored_hash'):
             dict_form['stored_hash'] = self.stored_hash
@@ -519,7 +520,7 @@ class Blockchain:
             
             #block = Block(2, "000028d21dadaf9f7e1eb56ccc1a36346cb009b79cf733d03a484b9bd9b06c4f")
             #block.demo_create()
-            print(block.hash() + " found for new block")
+            print(":::::::::::::::::::::::::::::::::::::\n\n\n\n\n" + block.hash() + "\n\n\n\n\n\n")
             key = block.id
             value = {
                 'type': 'block',
