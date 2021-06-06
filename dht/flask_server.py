@@ -169,11 +169,8 @@ def add_transaction():
       sender = config.get('keys', 'public_key')
       private_key = config.get('keys', 'private_key')
       extras = None
-      print('im here')
-      #1, 0, domain, config, '0', confiq, domain:ip:80 
       db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (request.form['amount'], 0.0, request.form['category'], sender, request.form['receiver_id'], private_key, extras))
-      print('im here 2')
-      return render_template('add_transaction.html')
+      return redirect('display_transactions')
    if request.args.get("public_key"):
       public_key = request.args.get("public_key")
       return render_template('add_transaction.html', public_key=public_key)
@@ -231,3 +228,22 @@ def delete_contact():
       contact = SQLiteHashTable('contacts')
       contact.delete_key(public_key)
    return redirect('all_contact')
+
+@app.route('/display_transactions')
+def display_transactions():
+   cur = db.con.cursor()
+   cur.execute("SELECT * from transactions")
+   transactions = []
+   for transaction in cur:
+      row = {
+         "amount":transaction['amount'],
+         "fee":transaction['fee'],
+         "category":transaction['category'],
+         "sender":transaction['sender'],
+         "receiver":transaction['receiver'],
+         "private_key":transaction['private_key'],
+         "extra":transaction['extra']
+      }
+      transactions.append(row)
+   cur.close()
+   return render_template('all_transactions.html', transactions=transactions)
