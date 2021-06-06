@@ -170,6 +170,7 @@ def add_transaction():
       private_key = config.get('keys', 'private_key')
       extras = None
       print('im here')
+      #1, 0, domain, config, '0', confiq, domain:ip:80 
       db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (request.form['amount'], 0.0, request.form['category'], sender, request.form['receiver_id'], private_key, extras))
       print('im here 2')
       return render_template('add_transaction.html')
@@ -179,18 +180,15 @@ def add_transaction():
    else:
       return render_template('add_transaction.html')
 
-@app.route('/transaction_inserted', methods=['GET', 'POST'])
-def transaction_inserted():
-   id = request.form['receiver_id']
-   category = request.form['category']
-   amount = request.form['amount']
-   print(id)
-   print(category)
-   print(amount)
-   return render_template('add_transaction.html')
-
-@app.route('/register_domain')
+@app.route('/register_domain', methods=['GET','POST'])
 def register_domain():
+   if "domain_name" in request.form and "IP" in request.form:
+      sender = config.get('keys', 'public_key')
+      private_key = config.get('keys', 'private_key')
+      extras = request.form['domain_name'] + ":" + request.form['IP'] + ":80"
+      print('im here')
+      db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (1.0, 0.0, 'domain', sender, '0', private_key, extras))
+      print('im here')
    return render_template('register_domain.html')   
 
 @app.route('/domain_registered', methods=['GET','POST'])
