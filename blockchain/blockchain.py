@@ -510,7 +510,7 @@ class Blockchain:
             cur.close()
 
             if len(block.data) == 0:
-                return
+                return "No Transactions"
 
             block.miner = key_string[1]
             block.nonce = block.proof_of_work()
@@ -552,8 +552,12 @@ class Blockchain:
                 domain_broadcast(self.dht, block)
                 for tx in block.data:
                     db.execute('delete from transactions where sender=? and receiver=? and amount=? and fee=?', (tx.details['sender'], tx.details['receiver'], tx.amount, tx.fee))
+                return "Block Created"
+
             else:
                 print("Discarding block, network did not accept")
+                return "Discarding block, network did not accept"
+        return "Not a miner"
 
 
 def todict(obj, classkey=None):

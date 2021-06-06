@@ -1,15 +1,8 @@
 {%extends 'base.html'%}
-    {%block styles%}
-    <style>
-        .text_data{display: inline;}
-    </style>
-    {%endblock%}
-
     {%block content%}
     <h1 class="display-4 text-white text_data">Blockchain Data</h1>
     <a href="{{url_for('create')}}" onclick="get('/create', event, pause, printer, 'result', 'result')" class="btn btn-primary float-right">Create Block</a>
     <div id="result" class="text-white my-3 mx-3 float-right"></div>
-    {% set index = 0 %}
     {% for block in blockchain %}
     <div class="card text-white mb-12">
         <div class="card-header pb-0">Block ID: {{block["id"]}}</div>
@@ -20,22 +13,24 @@
             <li class="list-group-item px-2 py-1">Miner: {{block["miner"]}}</li>
             <li class="list-group-item px-2 py-1">Nonce Value: {{block["nonce"]}}</li>
             <li class="list-group-item px-2 py-1">Previous Hash: {{block["prev_hash"]}}</li>            
-            <li  class="list-group-item px-2 py-1"><a data-bs-toggle="collapse" data-bs-target="#trans{{loop.index}}" aria-expanded="false" aria-controls="trans{{loop.index}}"><b><i class="fas fa-arrow-down fa-1x"></i> Transactions</b></a></li>
+            {% set index = 0 %}
+            {% for transaction in block.data %}
+                <li  class="list-group-item px-2 py-1"><a data-bs-toggle="collapse" data-bs-target="#trans{{loop.index}}" aria-expanded="false" aria-controls="trans{{loop.index}}"><b><i class="fas fa-arrow-down fa-1x"></i> Transactions</b></a></li>
                 <div id="trans{{loop.index}}" class="collapse">
-                <h6 class="py-1 px-2">Transaction No. {{loop.index}}</h6>
-                {% for transaction in block.data %}
-                <ul class="list-group list-group-flush" >
-                    <li class="list-group-item px-6 py-1">Amount: {{transaction["amount"]}}</li>
-                    <li class="list-group-item px-6 py-1">Fee: {{transaction["fee"]}}</li>
-                    <li class="list-group-item px-6 py-1">Previous Hash: {{transaction["category"]}}</li>
-                    <li class="list-group-item px-6 py-1">Category: {{transaction["sender"]}}</li>
-                    <li class="list-group-item px-6 py-1">Amount: {{transaction["receiver"]}}</li>
-                    <li class="list-group-item px-6 py-1">Fee: {{transaction["time"]}}</li>
-                    <li class="list-group-item px-6 py-1">Previous Hash: {{transaction["signature"]}}</li>
-                    <li class="list-group-item px-6 py-1">Category: {{transaction["extra"]}}</li>
-                </ul>
-                {% endfor %}
+                    <h6 class="py-1 px-2">Transaction No. {{loop.index}}</h6>
+                    <ul class="list-group list-group-flush" >
+                        <li class="list-group-item px-6 py-1">Amount: {{transaction["amount"]}}</li>
+                        <li class="list-group-item px-6 py-1">Fee: {{transaction["fee"]}}</li>
+                        <li class="list-group-item px-6 py-1">Category: {{transaction["details"]["category"]}}</li>
+                        <li class="list-group-item px-6 py-1">Sender: {{transaction["details"]["sender"]}}</li>
+                        <li class="list-group-item px-6 py-1">Receiver: {{transaction["details"]["receiver"]}}</li>
+                        <li class="list-group-item px-6 py-1">Time: {{transaction["time"]}}</li>
+                        <li class="list-group-item px-6 py-1">Signature: {{transaction["signature"]}}</li>
+                        <li class="list-group-item px-6 py-1">Extra: {{transaction["details"]["extra"]}}</li>
+                    </ul>
                 </div>
+            {% endfor %}
+            <li class="list-group-item px-2 py-1">Hash: {{block["hash"]}}</li>            
           </ul>
         </div>
     </div>

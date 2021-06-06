@@ -4,16 +4,18 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
 	parser.href = details.url;
 	var parts = parser.hostname.split('.');
 	var tld = parts[parts.length-1];
+
 	if(["iki"].indexOf(tld) !== -1) {
 		var name = parts[parts.length-2];
 		var domain = parser.hostname;
 		var access = (parser.protocol == "https:" ? "HTTPS" : "PROXY");
 		var port = (parser.protocol == "https:" ? "443" : "80");
 
-		if(sessionStorage.getItem(domain) == undefined) {
+		if(sessionStorage.getItem(domain) == undefined || sessionStorage.getItem(domain) == "0.0.0.0") {
 			var xhr = new XMLHttpRequest();
 			var url = "http://localhost:5000/get?domain="+encodeURIComponent(name + ".iki");
 			xhr.onreadystatechange = function() {
+				var success = false;
 				if(xhr.readyState == 4 && xhr.status == 200) {
 					var xmlDoc = xhr.responseXML;
 					if(xmlDoc.getElementsByTagName("ip").length > 0) {
@@ -27,12 +29,19 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
 						chrome.proxy.settings.set({value: config, scope: 'regular'}, function() {
 							console.log('Got IP '+ip+' from SERVER. Proxy config is set.');
 						});
+						success = true;
 						sessionStorage.setItem(domain, ip);
 					}
 				}
+				if(success == false) {
+					sessionStorage.setItem(domain, "0.0.0.0");
+				}
 			}
-			xhr.open("GET", url, false);
+			xhr.open("GET", url, true);//false);
 			xhr.send();
+			while(sessionStorage.getItem(domain) == undefined) {
+				1;
+			}
 
 			if(sessionStorage.getItem(domain) == null) {
 				var start = new Date().getTime();

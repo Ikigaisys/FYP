@@ -25,7 +25,7 @@ flask_variables = FlaskVariables()
 @app.route('/create')
 def create():
    value = flask_variables.dht.chain.create_block()
-   return jsonify({"data": value if value != None else "Didn't succeed" })
+   return jsonify({"data": value })
 
 @app.route('/bootstrap')
 def bootstrap():
@@ -57,7 +57,6 @@ def reset():
    db.execute("""
       insert into accounts (key, value) values ('-----BEGIN PUBLIC KEY-----$$MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UN6XU6w6k7Rikx/4XIr$$MkzBpAVKPchHIrbrQ0BGoxznFL2NiFm60e5eo/a6DXlY9/H72N2A9/RohKf+5sVI$$AnnNkCl3Z+junWbUpUSEQgP7HU8lcenVZTYxPjzy8WlceM79Z719bPNjemBrqLvC$$aR0ZOgH6kyHUVh+LudPMsiTyeWdZB3UA1pvUqQvkfRrXW2NOsdejON+4GK2KTgOi$$nvL/L29cS6htRSrm2JASdU0awPqifwGiQbT1NE6ZFhPcY0UXBkJOK8hO0uOJcnzx$$6oyL3SwOO54/dRkm7y+9W7LuUy6s0765NWRAR4FN4BqGXAsQTk1CPfkdSyY4Axip$$awIDAQAB$$-----END PUBLIC KEY-----$$', 20)
    """)
-   shutil.copyfile('templates\\kademlia_o.csv', 'kademlia.csv')
    flask_variables.dht.chain = Blockchain(flask_variables.dht, config.getboolean('blockchain', 'miner'))
    asyncio.run_coroutine_threadsafe(flask_variables.dht.node.bootstrap(flask_variables.send_nodes), flask_variables.dht.loop)
 
@@ -87,8 +86,8 @@ def reset_t():
 def get():
    if request.args.get('domain') is not None:
       domain = request.args.get('domain')
-      print("request " + request.args.get('domain'))
-      result = domain_find(flask_variables.dht.chain, request.args.get('domain'))
+      print("request " + domain)
+      result = domain_find(flask_variables.dht.chain, domain)
       if result is None:
          print("domain request failed")
          ip = "0.0.0.0"
@@ -120,47 +119,10 @@ def index():
 def list_blockchains():
    lb = flask_variables.dht.chain.last_blocks[flask_variables.dht.chain.id]
    blockchain = []
-   blockchain.append(flask_variables.dht.chain.chain_find(0))
-   for i in range(lb.id):
-      blockchain.append(flask_variables.dht.chain.chain_find(i))
-   """   blockchain = [
-      {
-         'id':'9876543210',
-         'prev_hash':'hash not found',
-         'miner':'None',
-         'timestramp':'03/06/2021',
-         'nonce':'987789',
-         'data':[
-            {'amount':'1000',
-             'fee':'Rs.2', 
-             'category':'Islam',
-             'sender':'Ammar',
-             'receiver':'Hashir',
-             'time':'14/01/1999',
-             'signature':'xtz',
-             'extra':'Fraz'
-            }
-         ]
-      },
-      {
-         'id':'9876543210',
-         'prev_hash':'hash not found',
-         'miner':'None',
-         'timestramp':'03/06/2021',
-         'nonce':'987789',
-         'data':[
-            {'amount':'1000',
-             'fee':'Rs.2', 
-             'category':'Islam',
-             'sender':'Ammar',
-             'receiver':'Hashir',
-             'time':'14/01/1999',
-             'signature':'xtz',
-             'extra':'Fraz'
-            }
-         ]
-      }
-   ]"""
+   for i in range(lb.id + 1):
+      blk = flask_variables.dht.chain.chain_find(i)
+      blk.hash = blk.hash()
+      blockchain.append(blk)
    return render_template('blockchain.html', blockchain = blockchain)
 
 @app.route('/add_transaction')
