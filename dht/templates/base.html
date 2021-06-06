@@ -29,49 +29,43 @@
       </div>
       <div class="sidebar-wrapper">
         <ul class="nav">
-          <li class="nav-item active  ">
+          <li class="nav-item{% if active and active == 'dashboard'%} active{% endif %}">
             <a class="nav-link" href="{{url_for('index')}}">
               <i class="material-icons">dashboard</i>
               <p>Dashboard</p>
             </a>
           </li>
-          <!--<li class="nav-item ">
-            <a class="nav-link" href="./user.html">
-              <i class="material-icons">person</i>
-              <p>User Profile</p>
-            </a>
-          </li>-->
-          <li class="nav-item ">
+          <li class="nav-item{% if active and active == 'blockchain'%} active{% endif %}">
             <a class="nav-link" href="{{url_for('list_blockchains')}}">
                 <i class="material-icons fas fa-link fa-2x"></i>
               <p>Blockchains</p>
             </a>
           </li>
-          <li class="nav-item ">
+          <li class="nav-item{% if active and active == 'transactions'%} active{% endif %}">
             <a class="nav-link" href="{{url_for('display_transactions')}}">
                 <i class="material-icons fas fa-list fa-2x"></i>
               <p>List Transaction</p>
             </a>
           </li>
-          <li class="nav-item ">
+          <li class="nav-item{% if active and active == 'register'%} active{% endif %}">
             <a class="nav-link" href="{{url_for('register_domain')}}">
                 <i class="material-icons fas fa-registered fa-2x"></i>
               <p>Register Domain</p>
             </a>
           </li>
-          <li class="nav-item ">
+          <li class="nav-item{% if active and active == 'contacts'%} active{% endif %}">
             <a class="nav-link" href="{{url_for('all_contact')}}">
                 <i class="material-icons fas fa-id-card-alt fa-2x"></i>
               <p>Contacts</p>
             </a>
           </li>
-          <li class="nav-item ">
+          <li class="nav-item">
             <a href="{{url_for('bootstrap')}}" onclick="get('/bootstrap', event, pause, printer, 'resultb', 'resultb')" class="nav-link">
                 <i class="material-icons fas fa-sync fa-2x"></i>
               <p>Bootstrap <span id="resultb"></span></p>              
             </a>
           </li>
-          <li class="nav-item ">
+          <li class="nav-item">
             <a href="{{url_for('reset')}}" onclick="get('/reset', event, pause, printer, 'resultr', 'resultr')" class="nav-link">
                 <i class="material-icons fas fa-trash-restore-alt fa-2x"></i>
               <p>Reset <span id="resultr"></span></p>              

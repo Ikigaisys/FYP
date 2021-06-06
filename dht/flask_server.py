@@ -113,7 +113,7 @@ def index():
       "flask_port": config.get('flask', 'port'),
       "public_copy": config.get('keys', 'public_key')
    }
-   return render_template('user_data.html', data = data)
+   return render_template('user_data.html', data=data, active="dashboard")
 
 @app.route('/list_blockchains')
 def list_blockchains():
@@ -123,7 +123,7 @@ def list_blockchains():
       blk = flask_variables.dht.chain.chain_find(i)
       blk.hash = blk.hash()
       blockchain.append(blk)
-   return render_template('blockchain.html', blockchain = blockchain)
+   return render_template('blockchain.html', blockchain=blockchain, active="blockchain")
 
 @app.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
@@ -135,9 +135,9 @@ def add_transaction():
       return redirect('display_transactions')
    if request.args.get("public_key"):
       public_key = request.args.get("public_key")
-      return render_template('add_transaction.html', public_key=public_key)
+      return render_template('add_transaction.html', public_key=public_key, active="transactions")
    else:
-      return render_template('add_transaction.html')
+      return render_template('add_transaction.html', active="transactions")
 
 @app.route('/register_domain', methods=['GET','POST'])
 def register_domain():
@@ -146,18 +146,8 @@ def register_domain():
       private_key = config.get('keys', 'private_key')
       extras = request.form['domain_name'] + ":" + request.form['IP'] + ":80"
       db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (1.0, 0.0, 'domain', sender, '0', private_key, extras))
-   return render_template('register_domain.html')   
+   return render_template('register_domain.html', active="register")   
 
-@app.route('/domain_registered', methods=['GET','POST'])
-def domain_registered():
-   domain = request.form['domain_name']
-   IP = request.form['IP']
-   print(domain + " " + IP)
-   return render_template('register_domain.html')
-
-@app.route('/submit_button')
-def submit_button():
-   return render_template('index.html')
 
 @app.route('/register_contact', methods=['GET', 'POST'])
 def register_contact():
@@ -169,7 +159,7 @@ def register_contact():
       print(request.args.items())
       return redirect("all_contact")
    else:
-      return render_template('register_contact.html')
+      return render_template('register_contact.html', active="contacts")
 
 @app.route('/all_contact', methods=['GET', 'POST'])
 def all_contact():
@@ -177,11 +167,11 @@ def all_contact():
    data = []
    for id, name in contact.fetchall():
       person={
-         "id":id,
-         "name":name
+         "id": id,
+         "name": name
       }
       data.append(person)
-   return render_template('all_contacts.html', data = data)
+   return render_template('all_contacts.html', data=data, active="contacts")
 
 @app.route('/delete_contact')
 def delete_contact():
@@ -198,14 +188,14 @@ def display_transactions():
    transactions = []
    for transaction in cur:
       row = {
-         "amount":transaction['amount'],
-         "fee":transaction['fee'],
-         "category":transaction['category'],
-         "sender":transaction['sender'],
-         "receiver":transaction['receiver'],
-         "private_key":transaction['private_key'],
-         "extra":transaction['extra']
+         "amount": transaction['amount'],
+         "fee": transaction['fee'],
+         "category": transaction['category'],
+         "sender": transaction['sender'],
+         "receiver": transaction['receiver'],
+         "private_key": transaction['private_key'],
+         "extra": transaction['extra']
       }
       transactions.append(row)
    cur.close()
-   return render_template('all_transactions.html', transactions=transactions)
+   return render_template('all_transactions.html', transactions=transactions, active="transactions")
