@@ -210,7 +210,7 @@ def register_contact():
       print(request.args.items())
       return redirect("all_contact")
    else:
-#      return render_template('register_contact.html')
+      return render_template('register_contact.html')
 
 @app.route('/all_contact', methods=['GET', 'POST'])
 def all_contact():
@@ -222,12 +222,6 @@ def all_contact():
          "name":name
       }
       data.append(person)
-   for i in range(10):
-      persons={
-         "id": "12345",
-         "name": "hashir"
-      }
-      data.append(persons)
    return render_template('all_contacts.html', data = data)
 
 @app.route('/delete_contact')
@@ -235,19 +229,5 @@ def delete_contact():
    if request.args.get("public_key"):
       public_key = request.args.get("public_key")
       contact = SQLiteHashTable('contacts')
-      contact.delete_contact(public_key)
-   data = []
-   contact = SQLiteHashTable('contacts')
-   for id, name in contact.fetchall():
-      person={
-         "id":id,
-         "name":name
-      }
-      data.append(person)
-   for i in range(10):
-      persons={
-         "id": "12345",
-         "name": "hashir"
-      }
-      data.append(persons)
-   return render_template('all_contacts.html', data = data)
+      contact.delete_key(public_key)
+   return redirect('all_contact')

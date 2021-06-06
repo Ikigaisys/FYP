@@ -84,7 +84,7 @@ class SQLiteHashTable:
         cursor.close()
         return result
 
-    def delete_contact(self, value_to_delete):
+    def delete_key(self, value_to_delete):
         cursor = db.con.cursor()
         values = cursor.execute("delete from " + self.tablename + " where key = " + value_to_delete)
         cursor.close()
