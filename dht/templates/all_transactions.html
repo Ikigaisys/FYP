@@ -1,0 +1,34 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+        .text_data{display: inline;}
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">Blockchain Data</h1>
+    <a href="{{url_for('add_transaction')}}" class="btn btn-primary float-right">Add Transaction</a>
+    <div id="result" class="text-white my-3 mx-3 float-right"></div>
+    {% set index = 0 %}
+    {% for transaction in transactions %}
+    <div class="card text-white mb-12">
+        <div class="card-header pb-0">ID: {{loop.index}}</div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-2 py-1">Sender: {{transaction["sender"]}}</li>
+            <li class="list-group-item px-2 py-1">Receiver: {{transaction["receiver"]}}</li>
+            <li class="list-group-item px-2 py-1">Amount: {{transaction["amount"]}}</li>
+            <li class="list-group-item px-2 py-1">Fee: {{transaction["fee"]}}</li>            
+            <li class="list-group-item px-2 py-1">Category: {{transaction["category"]}}</li>
+            <li class="list-group-item px-2 py-1">Extra: {{transaction["extra"]}}</li>
+            <li  class="list-group-item px-2 py-1"><a data-bs-toggle="collapse" data-bs-target="#trans{{loop.index}}" aria-expanded="false" aria-controls="trans{{loop.index}}"><b><i class="fas fa-arrow-down fa-1x"></i> Private Key</b></a></li>
+            <div id="trans{{loop.index}}" class="collapse">
+                <ul class="list-group list-group-flush" >
+                    <li class="list-group-item px-4 py-1">{{transaction["private_key"]}}</li>
+                </ul>
+            </div>
+          </ul>
+        </div>
+    </div>
+    {% endfor %}
+    {%endblock%}
