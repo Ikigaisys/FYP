@@ -163,8 +163,16 @@ def list_blockchains():
    ]"""
    return render_template('blockchain.html', blockchain = blockchain)
 
-@app.route('/add_transaction')
+@app.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
+   if "receiver_id" in request.form and "category" in request.form and "amount" in request.form:
+      sender = config.get('keys', 'public_key')
+      private_key = config.get('keys', 'private_key')
+      extras = None
+      print('im here')
+      db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (request.form['amount'], 0.0, request.form['category'], sender, request.form['receiver_id'], private_key, extras))
+      print('im here 2')
+      return render_template('add_transaction.html')
    if request.args.get("public_key"):
       public_key = request.args.get("public_key")
       return render_template('add_transaction.html', public_key=public_key)
