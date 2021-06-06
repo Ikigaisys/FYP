@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import flask
 from flask.wrappers import Request
 from blockchain.blockchain import Transaction, Blockchain, Block
-from flask import Flask, Response, render_template, jsonify, request
+from flask import Flask, Response, render_template, jsonify, request, redirect
 from flask_cors import CORS, cross_origin
 import shutil
 import asyncio
@@ -163,26 +163,27 @@ def list_blockchains():
    ]"""
    return render_template('blockchain.html', blockchain = blockchain)
 
-@app.route('/add_transaction')
+@app.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
+   if "receiver_id" in request.form and "category" in request.form and "amount" in request.form:
+      sender = config.get('keys', 'public_key')
+      private_key = config.get('keys', 'private_key')
+      extras = None
+      db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (request.form['amount'], 0.0, request.form['category'], sender, request.form['receiver_id'], private_key, extras))
+      return redirect('display_transactions')
    if request.args.get("public_key"):
       public_key = request.args.get("public_key")
       return render_template('add_transaction.html', public_key=public_key)
    else:
       return render_template('add_transaction.html')
 
-@app.route('/transaction_inserted', methods=['GET', 'POST'])
-def transaction_inserted():
-   id = request.form['receiver_id']
-   category = request.form['category']
-   amount = request.form['amount']
-   print(id)
-   print(category)
-   print(amount)
-   return render_template('add_transaction.html')
-
-@app.route('/register_domain')
+@app.route('/register_domain', methods=['GET','POST'])
 def register_domain():
+   if "domain_name" in request.form and "IP" in request.form:
+      sender = config.get('keys', 'public_key')
+      private_key = config.get('keys', 'private_key')
+      extras = request.form['domain_name'] + ":" + request.form['IP'] + ":80"
+      db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (1.0, 0.0, 'domain', sender, '0', private_key, extras))
    return render_template('register_domain.html')   
 
 @app.route('/domain_registered', methods=['GET','POST'])
@@ -203,8 +204,10 @@ def register_contact():
       name = request.form["receiver_name"]
       contact = SQLiteHashTable('contacts')
       contact[id] = name
-   print(request.args.items())
-   return render_template('register_contact.html')
+      print(request.args.items())
+      return redirect("all_contact")
+   else:
+      return render_template('register_contact.html')
 
 @app.route('/all_contact', methods=['GET', 'POST'])
 def all_contact():
@@ -216,12 +219,6 @@ def all_contact():
          "name":name
       }
       data.append(person)
-   for i in range(10):
-      persons={
-         "id": "12345",
-         "name": "hashir"
-      }
-      data.append(persons)
    return render_template('all_contacts.html', data = data)
 
 @app.route('/delete_contact')
@@ -229,19 +226,24 @@ def delete_contact():
    if request.args.get("public_key"):
       public_key = request.args.get("public_key")
       contact = SQLiteHashTable('contacts')
-      contact.delete_contact(public_key)
-   data = []
-   contact = SQLiteHashTable('contacts')
-   for id, name in contact.fetchall():
-      person={
-         "id":id,
-         "name":name
+      contact.delete_key(public_key)
+   return redirect('all_contact')
+
+@app.route('/display_transactions')
+def display_transactions():
+   cur = db.con.cursor()
+   cur.execute("SELECT * from transactions")
+   transactions = []
+   for transaction in cur:
+      row = {
+         "amount":transaction['amount'],
+         "fee":transaction['fee'],
+         "category":transaction['category'],
+         "sender":transaction['sender'],
+         "receiver":transaction['receiver'],
+         "private_key":transaction['private_key'],
+         "extra":transaction['extra']
       }
-      data.append(person)
-   for i in range(10):
-      persons={
-         "id": "12345",
-         "name": "hashir"
-      }
-      data.append(persons)
-   return render_template('all_contacts.html', data = data)
+      transactions.append(row)
+   cur.close()
+   return render_template('all_transactions.html', transactions=transactions)
