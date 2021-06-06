@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import flask
 from flask.wrappers import Request
 from blockchain.blockchain import Transaction, Blockchain, Block
-from flask import Flask, Response, render_template, jsonify, request
+from flask import Flask, Response, render_template, jsonify, request, redirect
 from flask_cors import CORS, cross_origin
 import shutil
 import asyncio
@@ -186,9 +186,7 @@ def register_domain():
       sender = config.get('keys', 'public_key')
       private_key = config.get('keys', 'private_key')
       extras = request.form['domain_name'] + ":" + request.form['IP'] + ":80"
-      print('im here')
       db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (1.0, 0.0, 'domain', sender, '0', private_key, extras))
-      print('im here')
    return render_template('register_domain.html')   
 
 @app.route('/domain_registered', methods=['GET','POST'])
@@ -209,8 +207,10 @@ def register_contact():
       name = request.form["receiver_name"]
       contact = SQLiteHashTable('contacts')
       contact[id] = name
-   print(request.args.items())
-   return render_template('register_contact.html')
+      print(request.args.items())
+      return redirect("all_contact")
+   else:
+#      return render_template('register_contact.html')
 
 @app.route('/all_contact', methods=['GET', 'POST'])
 def all_contact():
