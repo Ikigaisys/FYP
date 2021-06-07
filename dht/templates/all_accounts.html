@@ -1,0 +1,38 @@
+{%extends 'base.html'%}
+    {%block styles%}
+    <style>
+         .text_data{display: inline;}
+    </style>
+    {%endblock%}
+
+    {%block content%}
+    <h1 class="display-4 text-white text_data">Accounts</h1>
+    <br>
+    {% for row in me_data %}
+    <div class="card">
+        <div class="card-body">
+          <p class="card-title">{{row["public_key"]}}</p>
+          <p class="card-text">Amount: {{row["amount"]}}</p>
+        </div>
+      </div>
+    {% endfor %}
+
+    {% for row in friends_data %}
+    <div class="card">
+        <div class="card-body">
+          <p class="card-title">{{row["public_key"]}}</p>
+          <p class="card-text">Amount: {{row["amount"]}}</p>
+        </div>
+      </div>
+    {% endfor %}
+
+    {% for row in other %}
+    <div class="card">
+        <div class="card-body">
+          <p class="card-title">{{row["public_key"]}}</p>
+          <p class="card-text">Amount: {{row["amount"]}}</p>
+        </div>
+      </div>
+    {% endfor %}
+    
+    {%endblock%}

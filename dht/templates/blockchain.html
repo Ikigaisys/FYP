@@ -3,6 +3,7 @@
     <h1 class="display-4 text-white text_data">Blockchain Data</h1>
     <a href="{{url_for('create')}}" onclick="get('/create', event, pause, printer, 'result', 'result')" class="btn btn-primary float-right">Create Block</a>
     <a href="{{url_for('fetch')}}" class="btn btn-primary float-right mr-2">Fetch Block</a>
+    <a href="{{url_for('all_accounts')}}" class="btn btn-primary float-right mr-2">Accounts</a>    
     <div id="result" class="text-white my-3 mx-3 float-right"></div>
     {% for block in blockchain %}
     <div class="card text-white mb-12">
