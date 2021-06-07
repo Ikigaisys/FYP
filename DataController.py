@@ -67,7 +67,7 @@ class SQLiteHashTable:
         if self.__getitem__(key) is None:
             db.execute("insert into " + self.tablename + " (key, value) values (?, ?)", (key, value))
         else:
-            db.execute("update " + self.tablename + " set value=? where key=?", (key, value))
+            db.execute("update " + self.tablename + " set value=? where key=?", (value, key))
     
     def fetchall(self):
         cursor = db.con.cursor()
