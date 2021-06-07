@@ -259,24 +259,6 @@ class Blockchain:
             self.id = db.execute('insert into blockchain (last_block, fork_location) values (?,?)', (0,0))
             self.chain_append(Block(0, '0', timestamp=0))
 
-            """if os.path.exists('blockchain.txt') and os.stat('blockchain.txt').st_size != 0:
-            with open('blockchain.txt', 'r') as file:
-                lines = file.readlines()
-                i = 0
-                for line in lines:
-                    line = json.loads(line);
-                    if i == 0:
-                        self.last_block = Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data'])
-                        if 'stored_hash' in line:
-                            self.last_block.stored_hash = line['stored_hash'] 
-                    else:
-                        block = Block(line['id'], line['prev_hash'], line['miner'], line['timestamp'], line['nonce'], line['data'])
-                        if 'stored_hash' in line:
-                            block.stored_hash = line['stored_hash']
-                        self.chain.append(block)
-                    i = i + 1
-            """
-
     # Find the block on the network
     def find_block_network(self, id):
         key = str(id)
@@ -403,9 +385,6 @@ class Blockchain:
             if 'stored_hash' in block:
                 blk.stored_hash = block['stored_hash']
             return blk
-        """for blk, i in enumerate(self.chain):
-            if self.chain[blk].id == id:
-                return self.chain[blk]"""
         return None
 
     # Add the block to the chain
@@ -436,22 +415,10 @@ class Blockchain:
             db.execute('update blocks set prev_hash=?, miner=?, timestamp=?, nonce=?, data=?, chain=?, stored_hash=? where id=?',
                 (block.prev_hash, block.miner, block.timestamp, block.nonce, blockstr, chain, stored_hash, block.id))
         
-        """for blk, i in enumerate(self.chain):
-            if self.chain[blk].id == block.id:
-                self.chain[blk] = block 
-                found = True
-        if not found:
-            self.chain.append(block)
-
-        with open('blockchain.txt', 'w') as file:
-            file.write(json.dumps(todict(self.last_block), sort_keys = True) + '\n')
-            for block in self.chain:
-                file.write(json.dumps(todict(block), sort_keys = True) + '\n')"""
-
     # Try to accept a new incoming block
     def accept_block(self, block, keep_data = True):
         # Handle a newly created block
-        if self.chain_update(block):
+        if self.chain_update(block, keep_data):
             return True
 
         # Handle older blocks (Don't perform transactions again, just store)
@@ -579,19 +546,3 @@ def todict(obj, classkey=None):
         return data
     else:
         return obj
-
-"""if __name__ == '__main__':
-    #    import pickle
-    x = Block(1, 0)
-    x.nonce = x.proof_of_work()
-    print(x.nonce)
-    print(x.hash_proof())
-
-    #x1 = Block(2, x.hash_proof())
-    #x1.nonce = x1.proof_of_work()
-    #print(x1.nonce)
-    #print(x1.hash_proof())
-
-
-#    f = open('p.txt', 'wb')
-#    pickle.dump(x, f)"""
