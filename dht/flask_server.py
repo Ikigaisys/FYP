@@ -8,6 +8,7 @@ import shutil
 import asyncio
 from DataController import *
 from blockchain.dns_utils import domain_find
+import json
 
 config = ConfigParser()
 config.read('config.ini')
@@ -138,8 +139,9 @@ def add_transaction():
       extras = None
       db.execute('insert into transactions (amount, fee, category, sender, receiver, private_key, extra) values(?,?,?,?,?,?,?)', (request.form['amount'], 0.0, request.form['category'], sender, request.form['receiver_id'], private_key, extras))
       return redirect('display_transactions')
-   if request.args.get("public_key"):
-      public_key = request.args.get("public_key")
+   if "public_key" in request.form:
+      public_key = request.form["public_key"]
+      print(public_key)
       return render_template('add_transaction.html', public_key=public_key, active="transactions")
    else:
       return render_template('add_transaction.html', active="transactions")
@@ -204,3 +206,19 @@ def display_transactions():
       transactions.append(row)
    cur.close()
    return render_template('all_transactions.html', transactions=transactions, active="transactions")
+
+
+@app.route('/fetch')
+def fetch():
+   if "block_id" in request.form:
+      block_id = request.form["block_id"]
+      value = flask_variables.dht.get(block_id)
+      data = json.loads(value)
+      blockchain = []
+      if data['type'] == 'block':
+         args = json.loads(data['data'])
+         block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
+         if flask_variables.dht.chain.accept_block(block, data['store'] or None, False):
+            blockchain.append(block)
+      return render_template('blockchain.html', blockchain=blockchain, active="blockchain")
+   return render_template('fetch_block.html')
