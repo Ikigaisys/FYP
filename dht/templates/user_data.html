@@ -22,15 +22,16 @@
         <br>
         <div class="form-row">
             <div class="form-group col-md-6">
-                {% if 'server_port' %}
-                <label for="Server_Port" class="fs-6">Server Port</label>
-                <p class="form-control text-info fs-6" id="Server_Port">{{data["server_port"]}}</p>
+                {% if 'server_port' and 'flask_port' %}
+                <label for="Server_Port" class="fs-6">Server/Flask Port</label>
+                <p class="form-control text-info fs-6" id="Server_Port">{{data["server_port"]}}/{{data["flask_port"]}}
+                </p>
                 {% endif %}
             </div>
             <div class="form-group col-md-6">
-                {% if 'flask_port' %}
-                <label for="Flask Port" class="fs-6">Flask Port Number</label>
-                <p class="form-control text-info fs-6" id="Flask Port">{{data["flask_port"]}}</p>
+                {% if 'balance' %}
+                <label for="Balance" class="fs-6">Balance</label>
+                <p class="form-control text-info fs-6" id="Flask Port">{{data["balance"]}}</p>
                 {% endif %}
             </div>
         </div>

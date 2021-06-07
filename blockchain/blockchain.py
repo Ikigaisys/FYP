@@ -476,7 +476,7 @@ class Blockchain:
         return False
 
     # Create a new block
-    def create_block(self):
+    def create_block(self, empty=False):
         if self.is_miner:
             db.execute("""
                 CREATE TABLE IF NOT EXISTS transactions 
@@ -509,7 +509,7 @@ class Blockchain:
                     print("Invalid transaction detected, skipping!")
             cur.close()
 
-            if len(block.data) == 0:
+            if len(block.data) == 0 and empty == False:
                 return "No Transactions"
 
             block.miner = key_string[1]
