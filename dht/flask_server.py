@@ -200,11 +200,6 @@ def all_accounts():
          me_data.append(amount)
       else:
          other.append(amount)
-   accounts['123'] = 10.0
-   accounts['456'] = 15.0
-   accounts['789'] = 20.0
-   accounts['101112'] = 25.0
-   accounts['-----BEGIN PUBLIC KEY-----$$MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3iQtgMj3BSE5HV2jdJew$$KagQCsPFHEPck81p4horhwrQ2jH0EvSAlTsBGCiD2fT0cLA5WaMRbA9t5DGW/zhW$$g/zfzPJqTlXkNovOlU19WI7XKTeWqi9/UgChVMCThSVwZpZfGUZNF9kGH2S+dpP3$$j/P6IjutzasX7ksoP0PbFbeVVXcmrYPnl+HKJHDLEtKjqWvafz8VuOuSEtYa9e7r$$mIxVYxADSLX8kMBAOvYqh6xh9DmM4Cfpnsc+b58hgmuL5+bDwEeaxazfgzUpoRyj$$LhJ17VT54s+koRIipyQzkIV1AVPMDPoaIgRCX34I2fZcmuuct6hGnil5n4IGEYxj$$XwIDAQAB$$-----END PUBLIC KEY-----$$'] = 3.74
    return render_template('all_accounts.html', me_data=me_data, friends_data=friends_data,other=other)
 
 @app.route('/delete_contact')
