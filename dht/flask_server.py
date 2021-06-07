@@ -208,17 +208,21 @@ def display_transactions():
    return render_template('all_transactions.html', transactions=transactions, active="transactions")
 
 
-@app.route('/fetch')
+@app.route('/fetch', methods=['GET', 'POST'])
 def fetch():
    if "block_id" in request.form:
       block_id = request.form["block_id"]
       value = flask_variables.dht.get(block_id)
-      data = json.loads(value)
+      try:
+         data = json.loads(value)
+      except:
+         data = None
       blockchain = []
-      if data['type'] == 'block':
+      if data is not None and data['type'] == 'block':
          args = json.loads(data['data'])
          block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
-         if flask_variables.dht.chain.accept_block(block, data['store'] or None, False):
+         if flask_variables.dht.chain.accept_block(block, data['store'] or None):
+            block.hash = block.hash()
             blockchain.append(block)
       return render_template('blockchain.html', blockchain=blockchain, active="blockchain")
    return render_template('fetch_block.html')
