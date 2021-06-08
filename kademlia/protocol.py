@@ -130,7 +130,7 @@ class KademliaProtocol(RPCProtocol):
                 del(self.miss_table[node.id])
                 self.router.remove_contact(node)
             else:
-                log.warning("no response from %s, %d chances left before removal", (self.miss_table[node.id], node))
+                log.warning("no response from %s, %d chances left before removal", (node, self.miss_table[node.id]))
                 self.miss_table[node.id] -= 1
             return result
 
