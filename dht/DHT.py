@@ -11,7 +11,7 @@ from .flask_server import flask_variables
 from configparser import ConfigParser
 from .filestorage import FileStorage
 from kademlia.network import Server
-from blockchain.blockchain import Transaction, Blockchain, Block
+from blockchain.blockchain import Transaction, Blockchain, Block, threadlock
 from DataController import SQLiteHashTable
 from kademlia.node import Node
 from kademlia.utils import digest
@@ -65,6 +65,10 @@ class DHT:
         self.chain = Blockchain(self, DHT.config.getboolean('blockchain', 'miner'))
 
     def callback_thread(self, sender, nodeid, key, value, storage):
+        while(threadlock):
+            1
+        threadlock = True
+
         data = json.loads(value)
 
         if data['type'] == 'block':
@@ -72,7 +76,9 @@ class DHT:
             block = Block(args['id'], args['prev_hash'], args['miner'], args['timestamp'], args['nonce'], args['data'])
             if self.chain.accept_block(block, data['store'] or None):
                 storage[key] = value
+                threadlock = False
                 return True
+            threadlock = False
             return False
 
         if data['type'] == 'domain':
@@ -86,9 +92,12 @@ class DHT:
             if self.chain.validate_block(block):
                 if block.find_transaction_by_extra(data['domain']):
                     storage[digest(domain)] = json.dumps({'type': 'domain', 'value': block.id})
+                    threadlock = False
                     return True
+            threadlock = False
             return False
 
+        threadlock = False
         return False # reject data insertion to DHT by default
 
     def receive_callback(self, sender, nodeid, key, value, storage):

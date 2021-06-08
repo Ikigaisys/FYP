@@ -51,7 +51,8 @@ if config.has_section('keys') and config.has_option('keys', 'public_key') and co
     key_string = key.to_string()
 
 accounts = SQLiteHashTable('accounts', 'float')
-        
+threadlock = False
+
 class Domain:
 
     def __init__(self):
