@@ -512,7 +512,7 @@ class Blockchain:
             if(blk is not None and blk.hash() == block.hash()):
             # Notify everyone that I just made a block
                 value['store'] = False
-                dht_set = db.fetchone("select * from dht_data where key=?" (digest(block.id),))
+                dht_set = db.fetchone("select * from dht_data where key=?", (digest(block.id),))
                 if dht_set is None:
                     self.tx_perform(block)
                 self.dht.broadcast(key, value_encoded)
