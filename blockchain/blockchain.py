@@ -304,6 +304,7 @@ class Blockchain:
         for tx in txs:
             if not tx.validate(self, new, block.id) or not tx.verify():
                 return False
+        return True
 
     # Block received/created, update the account data for each person by
     # performing transactions
