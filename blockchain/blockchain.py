@@ -8,6 +8,7 @@ from .encryption import Signatures
 from DataController import SQLiteHashTable, db
 from configparser import ConfigParser
 from .dns_utils import *
+from kademlia.utils import digest
 
 class Key:
 
@@ -297,36 +298,39 @@ class Blockchain:
             return True
         return False
 
+    # Always call before tx_perform
+    def tx_validate(self, block, new = False):
+        txs = block.get_transactions()
+        for tx in txs:
+            if not tx.validate(self, new, block.id) or not tx.verify():
+                return False
+
     # Block received/created, update the account data for each person by
     # performing transactions
     # TODO: Rollback when a transaction is invalid...
-    def tx_perform(self, block, new = False):
+    def tx_perform(self, block):
         txs = block.get_transactions()
         miner = block.miner.replace('\n', '$$')
         if accounts[miner] is None:
             accounts[miner] = 0
 
         for tx in txs:
-            if not tx.validate(self, new, block.id) or not tx.verify():
-                return False
-
             sender = tx.details['sender'].replace('\n', '$$')
             receiver = tx.details['receiver'].replace('\n', '$$')
 
             # If transaction type is domain, money should be burnt
             if tx.details['category'] == 'domain':
-                accounts[sender] = accounts[sender] - tx.amount + tx.fee
-                accounts[miner] = accounts[miner] + tx.fee
+                accounts[sender] -= (tx.amount + tx.fee)
+                accounts[miner] += tx.fee
 
             else:
-                accounts[sender] = accounts[sender] - tx.amount - tx.fee
+                accounts[sender] -= (tx.amount + tx.fee)
                 if accounts[receiver] is None:
                     accounts[receiver] = 0
-                accounts[receiver] = accounts[receiver] + tx.amount
-                accounts[miner] = accounts[miner] + tx.fee
+                accounts[receiver] += tx.amount
+                accounts[miner] += tx.fee
 
-        accounts[miner] = accounts[miner] + 20
-        return True 
+        accounts[miner] += 20
 
     # Update the chain by performing missing/new transactions
     # Update last_block attribute
@@ -340,8 +344,9 @@ class Blockchain:
                 _block = self.find_block_network(self.last_blocks[self.id].id + 1)
                 # New block found, attempt to update my last block
                 if _block is not None:
-                    if self.last_blocks[self.id].id + 1 == _block.id and _block.prev_hash == self.last_blocks[self.id].hash_stored() and _block.validate_proof() and self.tx_perform(_block, True):
+                    if self.last_blocks[self.id].id + 1 == _block.id and _block.prev_hash == self.last_blocks[self.id].hash_stored() and _block.validate_proof() and self.tx_validate(_block, True):
                         #self.last_block = _block
+                        self.tx_perform(_block) 
                         self.chain_append(_block, False)
                         found = True
                         break
@@ -363,14 +368,9 @@ class Blockchain:
                 print("TODO: Fork and save both")
                 return False
 
-        print(self.last_blocks[self.id])
-        print(block.prev_hash)
-        print(block.prev_hash == self.last_blocks[self.id].hash_stored())
-        print(block.validate_proof())
-
-        if self.last_blocks[self.id].id + 1 == block.id and block.prev_hash == self.last_blocks[self.id].hash_stored() and block.validate_proof() and self.tx_perform(block, True):
+        if self.last_blocks[self.id].id + 1 == block.id and block.prev_hash == self.last_blocks[self.id].hash_stored() and block.validate_proof() and self.tx_validate(block, True):
             #self.last_block = block
-            self.chain_append(block, keep_data)
+            self.tx_perform(block)
             return True
 
         return False
@@ -512,8 +512,10 @@ class Blockchain:
             if(blk is not None and blk.hash() == block.hash()):
             # Notify everyone that I just made a block
                 value['store'] = False
+                dht_set = db.fetchone("select * from dht_data where key=?" (digest(block.id),))
+                if dht_set is None:
+                    self.tx_perform(block)
                 self.dht.broadcast(key, value_encoded)
-                self.tx_perform(block)
                 self.last_block = block
                 self.chain_append(block)
                 domain_broadcast(self.dht, block)
