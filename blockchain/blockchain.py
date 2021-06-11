@@ -372,6 +372,7 @@ class Blockchain:
         if self.last_blocks[self.id].id + 1 == block.id and block.prev_hash == self.last_blocks[self.id].hash_stored() and block.validate_proof() and self.tx_validate(block, True):
             #self.last_block = block
             self.tx_perform(block)
+            self.chain_append(block, keep_data)
             return True
 
         return False
