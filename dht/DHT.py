@@ -119,8 +119,46 @@ class DHT:
         time.sleep(1)
         asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
 
-        flask_variables.set(self, self.send_nodes)
-        app.run(port=DHT.config.getint('flask', 'port'))
+        while True:
+            # block = chain.create_block()
+
+            data = input()
+            split_data = data.split(' ')
+           
+            if data == 'create':
+                self.chain.create_block()
+
+            elif data == 'bootstrap':
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
+
+            elif data == 'reset':
+                shutil.copyfile('templates\\accounts_o.txt', 'accounts.txt')
+                shutil.copyfile('templates\\blockchain_o.txt', 'blockchain.txt')
+                shutil.copyfile('templates\\kademlia_o.csv', 'kademlia.csv')
+                shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
+                open('network_nodes_list.txt', 'w').close()
+                self.chain = Blockchain(self, Block(0, '0', timestamp=0), DHT.config.getboolean('blockchain', 'miner'))
+                asyncio.run_coroutine_threadsafe(self.node.bootstrap(self.send_nodes), self.loop)
+
+            elif data == 'reset_t':
+                shutil.copyfile('templates\\transactions_o.txt', 'transactions.txt')
+
+            elif len(split_data) >= 2 and split_data[0] == 'get':
+                if len(split_data) >= 3 and split_data[1] == 'domain':
+                    start_time = time.time()
+                    result = domain_find(self.chain, split_data[2])
+                    if result is None:
+                        print("domain request failed")
+                        ip = "0.0.0.0"
+                    else:
+                        ip = result[1]
+                        port = result[2]
+                    print(ip + " found in " + str(time.time() - start_time()))
+                else:
+                    print(self.get(split_data[1]))
+
+    # flask_variables.set(self, self.send_nodes)
+    # app.run(port=DHT.config.getint('flask', 'port'))
 
     def broadcast(self, _key, _value):
         for node_id, value in self.all_ips_hashtable.fetchall():
